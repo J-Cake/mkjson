@@ -1,0 +1,21 @@
+{
+    "name": "mkjs",
+    "type": "module",
+    "bin": "build/cli.js",
+    "main": "build/cli.js",
+    "scripts": {
+        "build:cli": "mkdir -p build && ln -f cli.js build/cli.js && $npm_execpath exec esbuild src/index.ts --outdir=build --bundle --sourcemap --splitting --platform=node --format=esm",
+        "build:check": "$npm_execpath exec tsc -p tsconfig.json && $npm_execpath run build"
+    },
+    "dependencies": {
+        "@j-cake/jcake-utils": "latest",
+        "lodash": "latest",
+        "chalk": "latest"
+    },
+    "devDependencies": {
+        "@types/node": "latest",
+        "@types/lodash": "latest",
+        "esbuild": "latest",
+        "typescript": "latest"
+    }
+}
