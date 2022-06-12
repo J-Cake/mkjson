@@ -7,7 +7,7 @@
     "scripts": {
         "build:cli": "mkdir -p build && ln -f cli.js build/cli.js && $npm_execpath exec esbuild src/index.ts --outdir=build --bundle --sourcemap --splitting --platform=node --format=esm",
         "build:check": "$npm_execpath exec tsc -p tsconfig.json && $npm_execpath run build:cli",
-        "build:ln": "ln package.json build/package.json",
+        "build:ln": "cat package.json | jq -r '. {name, version, type, main: \\\"cli.js\\\", bin: \\\"cli.js\\\"}' > build/package.json",
         "test": "find test -name \\*.js | xargs -I {} bash -c 'node {}; echo [{}] exited with code $?'"
     },
     "dependencies": {
