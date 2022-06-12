@@ -21,6 +21,7 @@ jobs:
           # Defaults to the user or organization that owns the workflow file
       - run: |
           echo //npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }} > $NPM_CONFIG_USERCONFIG;
+          echo @j-cake:registry=https://npm.pkg.github.com >> $NPM_CONFIG_USERCONFIG
           cat $NPM_CONFIG_USERCONFIG
       - run: npm install -g pnpm
       - run: pnpm install
