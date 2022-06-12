@@ -24,7 +24,6 @@ jobs:
           cat $NPM_CONFIG_USERCONFIG
       - run: npm install -g pnpm
       - run: pnpm install
-      - run: pnpm --prefix test install
       - run: pnpm run build:cli
       - run: pnpm run test
       - run: pnpm publish --registry=https://npm.pkg.github.com
