@@ -4,5 +4,5 @@ import main from './index.js';
 
 await main(process.argv)
     .catch(err => (err instanceof Error ?
-        console.error(chalk.red('[error]'), err.message) :
-        console.error(chalk.red('[error]'), err), -1));
+        console.error(chalk.grey(`[${chalk.red('err')}]`), err) :
+        console.error(chalk.grey(`[${chalk.red('err')}]`), err), -1));
