@@ -31,7 +31,6 @@ export async function isOlder(selector: string, target: number): Promise<boolean
 }
 
 export default async function needsUpdating(this: Record<string, Rule>, rule: Rule, target: string, makefile: string): Promise<boolean> {
-    console.log(rule, target, makefile);
     const targetModified = rule.phony ? 0 : await fs.stat(toAbs(target, makefile)).then(stat => stat.mtime.getTime()).catch(err => 0);
 
     for (const i of rule.dependencies ?? []) {
