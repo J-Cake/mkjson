@@ -26,6 +26,7 @@ jobs:
       - run: npm install -g pnpm
       - run: pnpm install
       - run: pnpm run build:cli
+      - run: pnpm run build:ln
       - run: pnpm run test
       - run: pnpm publish --registry=https://npm.pkg.github.com
         working-directory: ./build
