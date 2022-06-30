@@ -13,14 +13,16 @@
     "dependencies": {
         "@j-cake/jcake-utils": "latest",
         "lodash": "latest",
-        "chalk": "latest",
-        "json5": "latest"
+        "chalk": "latest"
     },
     "devDependencies": {
         "@types/node": "latest",
         "@types/lodash": "latest",
         "esbuild": "latest",
         "typescript": "latest"
+    },
+    "optionalDependencies": {
+        "json5": "latest"
     },
     "targets": {
         "build/cli.js": {
@@ -31,16 +33,18 @@
                 "$npm_execpath exec esbuild src/index.ts --outdir=build --bundle --sourcemap --splitting --platform=node --format=esm"
             ]
         },
-        "check": {
-            "phony": true,
-            "run": "$npm_execpath exec tsc -p tsconfig.json && $npm_execpath run build"
-        },
         "build/ts/*.js": {
             "dependencies": ["src/*.ts", "locale/*.ts"],
             "run": "$npm_execpath exec tsc -p tsconfig.json"
         },
-        "package.json": {
-            "run": "echo Ran"
+
+        "check": {
+            "phony": true,
+            "run": "$npm_execpath exec tsc -p tsconfig.json && $npm_execpath run build"
+        },
+        "clean": {
+            "phony": true,
+            "run": "rm -rf node_modules build *lock*"
         }
     }
 }
