@@ -12,7 +12,7 @@
         "allowJs": true,
         "resolveJsonModule": true,
         "forceConsistentCasingInFileNames": true,
-        "rootDirs": ["src", "locale"],
+        "rootDirs": ["src"],
         "importHelpers": true,
         "strict": true,
         "typeRoots": ["node_modules/@types", "lib"]
