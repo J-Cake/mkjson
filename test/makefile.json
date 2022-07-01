@@ -1,0 +1,16 @@
+{
+    "targets": {
+        "target1": {
+            "dependencies": ["target2"],
+            "run": "touch target1"
+        },
+        "target2": {
+            "dependencies": ["target3"],
+            "run": "touch target2"
+        },
+        "target3": {
+            "dependencies": ["match.js"],
+            "run": "touch match.js"
+        }
+    }
+}
