@@ -1,7 +1,7 @@
 {
     "name": "@j-cake/mkjson",
     "type": "module",
-    "version": "v1.1.1",
+    "version": "v1.1.2",
     "bin": "build/cli.js",
     "main": "build/cli.js",
     "scripts": {
@@ -26,21 +26,24 @@
     },
     "targets": {
         "build/cli.js": {
-            "dependencies": ["src/*.ts", "locale/*.ts"],
+            "dependencies": ["build/index.js"],
             "run": [
                 "mkdir -p build",
-                "ln -f cli.js build/cli.js",
-                "$npm_execpath exec esbuild src/index.ts --outdir=build --bundle --sourcemap --splitting --platform=node --format=esm"
+                "ln -f cli.js build/cli.js"
             ]
         },
+        "build/index.js": {
+            "dependencies": ["src/*.ts"],
+            "run": "pnpm exec esbuild src/index.ts --outdir=build --bundle --sourcemap --splitting --platform=node --format=esm"
+        },
         "build/ts/*.js": {
-            "dependencies": ["src/*.ts", "locale/*.ts"],
-            "run": "$npm_execpath exec tsc -p tsconfig.json"
+            "dependencies": ["src/*.ts"],
+            "run": "pnpm exec tsc -p tsconfig.json"
         },
 
         "check": {
             "phony": true,
-            "run": "$npm_execpath exec tsc -p tsconfig.json && $npm_execpath run build"
+            "run": "pnpm exec tsc -p tsconfig.json && pnpm run build"
         },
         "clean": {
             "phony": true,

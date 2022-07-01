@@ -33,12 +33,12 @@ export async function isOlder(selector: string, target: number): Promise<boolean
     const wildcard = pathSegments.findIndex(i => i.includes('*') || i.includes('+'));
 
     if (wildcard <= 0) {
-        if (await fs.stat(selector).then(stat => stat.mtime.getTime()).catch(() => Infinity) > target) {
+        if (await fs.stat(selector).then(stat => stat.mtime.getTime()).catch(() => 0) > target) {
             log.debug('isOlder', { selector: chalk.yellow(selector) });
             return true;
         }
     } else for await (const i of lsdir(pathSegments.slice(0, wildcard).join('/')))
-        if (await fs.stat(i).then(stat => stat.mtime.getTime()).catch(() => Infinity) > target) {
+        if (await fs.stat(i).then(stat => stat.mtime.getTime()).catch(() => 0) > target) {
             log.debug('isOlder', { selector: chalk.yellow(i) });
             return true;
         }
@@ -58,7 +58,7 @@ export default updateDependencies;
 export async function updateDependencies(target: string, rule: Rule): Promise<boolean> {
     const { makefile, makefilePath } = config.get();
     const origin = makefilePath.split('/').slice(0, -1).join('/');
-    const mtime = await fs.stat(target)
+    const mtime = await fs.stat(toAbs(target, origin))
         .then(stat => stat.mtime.getTime())
         .catch(() => 0);
 
@@ -68,8 +68,9 @@ export async function updateDependencies(target: string, rule: Rule): Promise<bo
         log.verbose(`Checking ${i}`);
 
         const absTarget = toAbs(i, origin);
-        const dependencies = IterSync(Object.entries(makefile.targets))
-            .filtermap(([target, rule]) => matches(absTarget, toAbs(target, origin)) ? [target, rule] as [string, Rule] : null)
+        const targets = Object.entries(makefile.targets);
+        const dependencies = IterSync(targets)
+            .filtermap(([target, rule]) => matches(toAbs(target, origin), absTarget) ? [target, rule] as [string, Rule] : null)
             .collect();
 
         if (dependencies.length > 0) { // the dependency exist in the makefile

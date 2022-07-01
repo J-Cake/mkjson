@@ -33,14 +33,15 @@ export function matches(target: string, request: string): boolean {
 }
 
 export default async function buildArtifacts(artifacts: string[]): Promise<void> {
-    const { makefile, makefilePath: origin, force } = config.get();
+    const { makefile, makefilePath, force } = config.get();
+    const origin = makefilePath.split('/').slice(0, -1).join('/');
 
     for (const i of artifacts.length >= 1 ? artifacts : [Object.keys(config.get().makefile.targets)[0]]) {
         log.verbose(`Resolving artifact: ${i}`);
 
         const absTarget = toAbs(i, origin);
         const rules = IterSync(Object.entries(makefile.targets))
-            .filtermap(([target, rule]) => matches(absTarget, toAbs(target, origin)) ? [target, rule] as [string, Rule] : null)
+            .filtermap(([target, rule]) => matches(toAbs(target, origin), absTarget) ? [target, rule] as [string, Rule] : null)
             .collect();
 
         if (rules.length <= 0) {
@@ -52,7 +53,7 @@ export default async function buildArtifacts(artifacts: string[]): Promise<void>
             if (force || rule.phony || await dependency.updateDependencies(target, rule))
                 await run(rule);
             else
-                log.info(`Target ${chalk.yellow(target)} up-to-date`);
+                log.info(`Target ${chalk.yellow(target)} is up-to-date`);
 
     }
 }
@@ -75,21 +76,21 @@ export function run(rule: Rule): Promise<boolean> {
         if (rule.parallel) {
             log.info(`Running: ${chalk.grey(run.join(', '))}`);
 
-            if (rule.isolate)
-                return await Promise.all(run.map(i => new Promise<number>(ok => cp.spawn('bash', ['-c', i], { stdio: 'inherit' }).once('exit', ok))))
+            if (rule.isolate ?? true)
+                return await Promise.all(run.map(i => new Promise<number>(ok => cp.spawn('bash', ['-c', i], { stdio: 'inherit', env: process.env }).once('exit', ok))))
                     .then(codes => (rule.ignoreFailed || codes.every(i => i == 0)) ? resolve(codes.every(i => i == 0)) : reject(false))
             else
-                return cp.spawn('bash', ['-c', run.join(' & ') + ' & wait'], { stdio: 'inherit' })
+                return cp.spawn('bash', ['-c', run.join(' & ') + ' & wait'], { stdio: 'inherit', env: process.env })
                     .once('exit', code => (rule.ignoreFailed || code == 0) ? resolve(code == 0) : reject(false))
         } else
-            if (rule.isolate)
+            if (rule.isolate ?? true)
                 for (const i of run) {
                     log.info(`Running: ${chalk.grey(i)}`);
-                    await new Promise(ok => cp.spawn('bash', ['-c', i], { stdio: 'inherit' }).once('exit', ok));
+                    await new Promise(ok => cp.spawn('bash', ['-c', i], { stdio: 'inherit', env: process.env }).once('exit', ok));
                 }
             else {
                 log.info(`Running: ${chalk.grey(run.join(', '))}`);
-                await new Promise(ok => cp.spawn('bash', ['-c', run.join(' && ')], { stdio: 'inherit' }).once('exit', ok))
+                await new Promise(ok => cp.spawn('bash', ['-c', run.join(' && ')], { stdio: 'inherit', env: process.env }).once('exit', ok))
                     .then(code => (rule.ignoreFailed || code == 0) ? resolve(code == 0) : reject(false));
             }
 
