@@ -34,7 +34,7 @@ export default async function findMakefile(path?: string): Promise<Makefile> {
         return loadMakefile(process.stdin);
     } else if (path) {
         const location = await fs.realpath((path.startsWith('/') ? path :
-            path.startsWith('~/') ? os.homedir() + path.slice(1) :
+            path.startsWith('~/') ? os.homedir() + path.slice(2) :
                 path.startsWith('./') ? process.cwd() + path.slice(2) :
                     path)
             .replaceAll('/./', '/')

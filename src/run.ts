@@ -33,9 +33,9 @@ export function matches(target: string, request: string): boolean {
 }
 
 export default async function buildArtifacts(artifacts: string[]): Promise<void> {
-    const { makefile, makefilePath: origin, force } = config.get()
+    const { makefile, makefilePath: origin, force } = config.get();
 
-    for (const i of artifacts.length > 1 ? artifacts : [Object.keys(config.get().makefile.targets)[0]]) {
+    for (const i of artifacts.length >= 1 ? artifacts : [Object.keys(config.get().makefile.targets)[0]]) {
         log.verbose(`Resolving artifact: ${i}`);
 
         const absTarget = toAbs(i, origin);
