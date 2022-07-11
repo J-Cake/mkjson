@@ -23,7 +23,7 @@ export function matches(target: string, request: string): boolean {
             return true;
 
         const toRegExp = (str: string) =>
-            new RegExp(decodeURIComponent(str.replaceAll(/([.\-\/^$?\(\)\[\]\{\}])/g, '\\$1').replaceAll('*', '.*').replaceAll('+', '[^\/]*')), 'g')
+            new RegExp('^' + decodeURIComponent(str.replaceAll(/([.\-\/^$?\(\)\[\]\{\}])/g, '\\$1').replaceAll('*', '.*').replaceAll('+', '[^\/]*')) + '$', 'g')
 
         if (toRegExp(t).test(request) || toRegExp(request).test(t))
             return true;
