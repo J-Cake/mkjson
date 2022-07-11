@@ -50,7 +50,9 @@ export default async function buildArtifacts(artifacts: string[]): Promise<void>
         }
 
         for (const [target, rule] of rules)
-            if (force || rule.phony || await dependency.updateDependencies(target, rule))
+            if (force || await dependency.updateDependencies(target, rule) || rule.phony)
+                // move `|| rule.phony` to the end so that dependencies are updated regardless of whether the rule is phony,
+                // otherwise dependencies would _never_ run (that's how phony works after all).
                 await run(rule);
             else
                 log.info(`Target ${chalk.yellow(target)} is up-to-date`);
@@ -73,24 +75,32 @@ export function run(rule: Rule): Promise<boolean> {
 
         const run = typeof rule.run == 'string' ? [rule.run] : rule.run;
 
-        if (rule.parallel) {
-            log.info(`Running: ${chalk.grey(run.join(', '))}`);
+        const env = {
+            'mkjson': `${process.argv[0]} ${process.argv[1]}`,
+            ...process.env
+        };
 
-            if (rule.isolate ?? true)
-                return await Promise.all(run.map(i => new Promise<number>(ok => cp.spawn('bash', ['-c', i], { stdio: 'inherit', env: process.env }).once('exit', ok))))
+        if (rule.parallel)
+            if (rule.isolate ?? true) {
+                log.info(`Running: ${chalk.grey(run.join(', '))}`);
+
+                return await Promise.all(run.map(i => new Promise<number>(ok => cp.spawn('bash', ['-c', i], { stdio: 'inherit', env }).once('exit', ok))))
                     .then(codes => (rule.ignoreFailed || codes.every(i => i == 0)) ? resolve(codes.every(i => i == 0)) : reject(false))
-            else
-                return cp.spawn('bash', ['-c', run.join(' & ') + ' & wait'], { stdio: 'inherit', env: process.env })
-                    .once('exit', code => (rule.ignoreFailed || code == 0) ? resolve(code == 0) : reject(false))
-        } else
+            } else {
+                log.info(`Running: ${chalk.grey(`bash -c ${run.join(' & ')} & wait`)}`);
+
+                return cp.spawn('bash', ['-c', run.join(' & ') + ' & wait'], { stdio: 'inherit', env })
+                    .once('exit', code => (rule.ignoreFailed || code == 0) ? resolve(code == 0) : reject(false));
+            }
+        else
             if (rule.isolate ?? true)
                 for (const i of run) {
                     log.info(`Running: ${chalk.grey(i)}`);
-                    await new Promise(ok => cp.spawn('bash', ['-c', i], { stdio: 'inherit', env: process.env }).once('exit', ok));
+                    await new Promise(ok => cp.spawn('bash', ['-c', i], { stdio: 'inherit', env }).once('exit', ok));
                 }
             else {
-                log.info(`Running: ${chalk.grey(run.join(', '))}`);
-                await new Promise(ok => cp.spawn('bash', ['-c', run.join(' && ')], { stdio: 'inherit', env: process.env }).once('exit', ok))
+                log.info(`Running: ${chalk.grey(`bash -c ${run.join(' && ')}`)}`);
+                await new Promise(ok => cp.spawn('bash', ['-c', run.join(' && ')], { stdio: 'inherit', env }).once('exit', ok))
                     .then(code => (rule.ignoreFailed || code == 0) ? resolve(code == 0) : reject(false));
             }
 
