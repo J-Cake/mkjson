@@ -50,7 +50,7 @@ export default async function buildArtifacts(artifacts: string[]): Promise<void>
         }
 
         for (const [target, rule] of rules)
-            if (force || await dependency.updateDependencies(target, rule) || rule.phony)
+            if (await dependency.updateDependencies(target, rule) || force || rule.phony)
                 // move `|| rule.phony` to the end so that dependencies are updated regardless of whether the rule is phony,
                 // otherwise dependencies would _never_ run (that's how phony works after all).
                 await run(rule);
