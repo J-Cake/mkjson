@@ -23,7 +23,7 @@ export function matches(target: string, request: string): boolean {
             return true;
 
         const toRegExp = (str: string) =>
-            new RegExp(decodeURIComponent(str.replaceAll(/([.\-\/^$?\(\)\[\]\{\}])/g, '\\$1').replaceAll('*', '.*').replaceAll('+', '[^\/]*')), 'g')
+            new RegExp('^' + decodeURIComponent(str.replaceAll(/([.\-\/^$?\(\)\[\]\{\}])/g, '\\$1').replaceAll('*', '.*').replaceAll('+', '[^\/]*')) + '$', 'g')
 
         if (toRegExp(t).test(request) || toRegExp(request).test(t))
             return true;
@@ -50,7 +50,7 @@ export default async function buildArtifacts(artifacts: string[]): Promise<void>
         }
 
         for (const [target, rule] of rules)
-            if (force || await dependency.updateDependencies(target, rule) || rule.phony)
+            if (await dependency.updateDependencies(target, rule) || force || rule.phony)
                 // move `|| rule.phony` to the end so that dependencies are updated regardless of whether the rule is phony,
                 // otherwise dependencies would _never_ run (that's how phony works after all).
                 await run(rule);

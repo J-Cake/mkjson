@@ -64,6 +64,8 @@ export async function updateDependencies(target: string, rule: Rule): Promise<bo
 
     log.debug(`dependencies:`, rule.dependencies);
 
+    let didUpdate: boolean = false;
+
     for (const i of rule.dependencies ?? []) {
         log.verbose(`Checking ${i}`);
 
@@ -73,23 +75,20 @@ export async function updateDependencies(target: string, rule: Rule): Promise<bo
             .filtermap(([target, rule]) => matches(toAbs(target, origin), absTarget) ? [target, rule] as [string, Rule] : null)
             .collect();
 
+        log.debug(`Resolved dependency to ${chalk.green(absTarget)}.`);
+
         if (dependencies.length > 0) { // the dependency exist in the makefile
-            const rules = await Iter(dependencies)
-                .map(async i => [i[0], i[1], await isOlder(toAbs(i[0], origin), mtime)] as [string, Rule, boolean])
-                .await()
-                .filter(i => i[2])
-                .collect();
-
-            for (const [a, i, isOlder] of rules) {
-                log.debug(`Updating dependency ${a}`, i) // possibly recursive call to `updateDependencies()`
-                updateDependencies(a, i);
-                await run(i);
+            for (const [a, i] of dependencies) {
+                log.debug(`Updating ${a}`, i);
+                
+                if (await updateDependencies(a, i))
+                    didUpdate = !void await run(i);
             }
-
-            return rules.length > 0; // if any of the dependencies were updated, the target needs updating
-        } else // the dependency does not exist in the makefile, so it must be a file
-            return isOlder(absTarget, mtime);
+        } else if (await isOlder(absTarget, mtime))// the dependency does not exist in the makefile, so it must be a file
+            didUpdate = true;
     }
 
-    return false;
+    log.debug(`${didUpdate ? 'Updated' : 'Unchanged'} ${target}`);
+
+    return didUpdate;
 }
