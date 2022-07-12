@@ -15,11 +15,11 @@
             "dependencies": ["match.js"],
             "run": "touch match.js"
         },
-        "(t1), (t2)": {
+        "(t1);(t2)": {
             "run": "echo $target_0"
         },
         "test": {
-            "orderOnly": ["t1"],
+            "dependencies": ["t2"],
             "phony": true,
             "echo": "$npm"
         }

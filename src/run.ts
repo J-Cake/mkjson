@@ -16,8 +16,8 @@ import * as dependency from './dependency.js';
 export const select = <T>(obj: any, selector: string[]): T => obj && (selector.length > 0 ? select(obj[selector[0]], selector.slice(1)) : obj);
 export const toAbs = (target: string, origin: string): string => (target.startsWith('/') ? target : target.startsWith('~?') ? `${os.homedir()}/${target.slice(2)}` : (`${origin}/${target}`.replaceAll('//', '/'))).replaceAll(/\.\.\/[^\/]*/g, '').replaceAll(/\.\//g, '/').replaceAll('//', '/');
 
-export function matches(target: string, request: string): string[] | null {
-    const targets = target.split(/[\s;,\|]/g);
+export function matches(target: string, request: string, origin: string): string[] | null {
+    const targets = target.split(/[\s;,\|]/g).map(i => toAbs(i, origin).trim());
 
     for (let t of targets) {
         const captures = t.matchAll(/\([^\)]+?\)/g);
@@ -49,7 +49,7 @@ export default async function buildArtifacts(artifacts: string[]): Promise<void>
         const absTarget = toAbs(i, origin);
         const rules = IterSync(Object.entries(makefile.targets))
             .filtermap(function ([target, rule]) {
-                const match = matches(toAbs(target, origin), absTarget);
+                const match = matches(target, absTarget, origin);
                 if (match)
                     return { 
                         target, 

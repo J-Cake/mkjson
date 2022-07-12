@@ -74,7 +74,7 @@ export async function updateDependencies(target: string, rule: Rule): Promise<bo
         const targets = Object.entries(makefile.targets);
         const dependencies = IterSync(targets)
             .filtermap(function ([target, rule]) {
-                const match = matches(toAbs(target, origin), absTarget);
+                const match = matches(target, absTarget, origin);
                 if (match)
                     return {
                         target,
