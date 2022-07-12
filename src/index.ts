@@ -7,10 +7,16 @@ import findMakefile from './makefile.js';
 import buildArtifacts from './run.js';
 import initVars from './vars.js';
 
+export enum Force {
+    None,
+    Superficial,
+    Absolute
+}
+
 export interface Args {
     makefile: Makefile,
     artifacts: string[],
-    force: boolean,
+    force: Force,
     synchronous: boolean,
     logLevel: 'err' | 'info' | 'verbose' | 'debug',
     makefilePath: string,
@@ -18,7 +24,7 @@ export interface Args {
 }
 
 export const config = new StateManager<Args>({
-    force: false,
+    force: Force.None,
     logLevel: 'info',
     synchronous: false,
     artifacts: [],
@@ -34,7 +40,9 @@ export default async function main(argv: string[]) {
         else if (i === '--log-level')
             config.setState({ logLevel: logLevel(next()) });
         else if (i === '--force' || i == '-B' || i == '-f')
-            config.setState({ force: true });
+            config.setState({ force: Force.Superficial });
+        else if (i == '--force-absolute')
+            config.setState({ force: Force.Absolute });
         else if (i === '--synchronous' || i == '-S')
             config.setState({ synchronous: true });
         else
