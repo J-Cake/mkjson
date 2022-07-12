@@ -10,7 +10,7 @@ mkjson recursively searches for any one of four files in the current and any of 
 * `Makefile`
 * `makefile.json`
 
-> **Note: ** JSON5 is supported. Even if `package.json` doesn't support json5, it is valid from `mkjson`'s perspective.
+> **Note:** JSON5 is supported. Even if `package.json` doesn't support json5, it is valid from `mkjson`'s perspective.
 
 if any are found in any parent directory, it is considered the project's `makefile`.
 
