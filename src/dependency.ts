@@ -3,8 +3,8 @@
  */
 import { promises as fs } from 'node:fs';
 import chalk from 'chalk';
+import _ from 'lodash';
 import IterSync from '@j-cake/jcake-utils/iterSync';
-import Iter from '@j-cake/jcake-utils/iter';
 
 import { config, Force } from './index.js';
 import { Rule as Rule } from "./makefile.js";
@@ -73,17 +73,26 @@ export async function updateDependencies(target: string, rule: Rule): Promise<bo
         const absTarget = toAbs(i, origin);
         const targets = Object.entries(makefile.targets);
         const dependencies = IterSync(targets)
-            .filtermap(([target, rule]) => matches(toAbs(target, origin), absTarget) ? [target, rule] as [string, Rule] : null)
+            .filtermap(function ([target, rule]) {
+                const match = matches(toAbs(target, origin), absTarget);
+                if (match)
+                    return {
+                        target,
+                        rule,
+                        targetNames: match
+                    };
+                else return null;
+            })
             .collect();
 
         log.debug(`Resolved dependency to ${chalk.green(absTarget)}.`);
 
         if (dependencies.length > 0) { // the dependency exist in the makefile
-            for (const [a, i] of dependencies) {
-                log.debug(`Updating ${chalk.green(a)}`);
-                
-                if (await updateDependencies(a, i) || force == Force.Absolute)
-                    didUpdate = !void await run(i);
+            for (const {target, rule, targetNames} of dependencies) {
+                log.debug(`Updating ${chalk.green(target)}`);
+
+                if (await updateDependencies(target, rule) || force == Force.Absolute)
+                    didUpdate = !void await run(rule, _.fromPairs(targetNames.map((i, a) => [`target_${a}`, i])));
             }
         } else if (await isOlder(absTarget, mtime))// the dependency does not exist in the makefile, so it must be a file
             didUpdate = true;

@@ -3,14 +3,14 @@
  */
 import { promises as fs } from 'node:fs';
 import chalk from 'chalk';
+import _ from 'lodash';
 import IterSync from '@j-cake/jcake-utils/iterSync';
-import Iter from '@j-cake/jcake-utils/iter';
 
 import { config, Force } from './index.js';
 import { Rule as Rule } from "./makefile.js";
 import { run, matches, toAbs } from './run.js';
 import { log } from './log.js';
-import updateDependencies, { isOlder, lsdir } from './dependency.js';
+import updateDependencies from './dependency.js';
 
 export default updateDependencies;
 /**
@@ -34,17 +34,26 @@ export async function orderOnly(target: string, rule: Rule): Promise<void> {
         const absTarget = toAbs(i, origin);
         const targets = Object.entries(makefile.targets);
         const dependencies = IterSync(targets)
-            .filtermap(([target, rule]) => matches(toAbs(target, origin), absTarget) ? [target, rule] as [string, Rule] : null)
+            .filtermap(function ([target, rule]) {
+                const match = matches(toAbs(target, origin), absTarget);
+                if (match)
+                    return {
+                        target,
+                        rule,
+                        targetNames: match
+                    };
+                else return null;
+            })
             .collect();
 
         log.debug(`Resolved order-only-dependency to ${chalk.green(absTarget)}.`);
 
         if (dependencies.length > 0) { // the dependency exist in the makefile
-            for (const [a, i] of dependencies) {
-                log.debug(`Updating order-only dependent ${chalk.green(a)}`);
-                
-                if (await updateDependencies(a, i) || force == Force.Absolute)
-                    await run(i);
+            for (const { target, rule, targetNames } of dependencies) {
+                log.debug(`Updating order-only dependent ${chalk.green(target)}`);
+
+                if (await updateDependencies(target, rule) || force == Force.Absolute)
+                    await run(rule, _.fromPairs(targetNames.map((i, a) => [`target_${a}`, i])));
             }
         }
     }
