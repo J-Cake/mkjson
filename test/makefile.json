@@ -11,6 +11,9 @@
         "target3": {
             "dependencies": ["match.js"],
             "run": "touch match.js"
+        },
+        "(t1), (t2)": {
+            "run": "echo $target_0"
         }
     }
 }
