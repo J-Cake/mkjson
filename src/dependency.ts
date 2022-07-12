@@ -80,7 +80,7 @@ export async function updateDependencies(target: string, rule: Rule): Promise<bo
 
         if (dependencies.length > 0) { // the dependency exist in the makefile
             for (const [a, i] of dependencies) {
-                log.debug(`Updating ${a}`, i);
+                log.debug(`Updating ${a}`);
                 
                 if (await updateDependencies(a, i) || force == Force.Absolute)
                     didUpdate = !void await run(i);

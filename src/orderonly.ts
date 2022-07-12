@@ -29,7 +29,7 @@ export async function orderOnly(target: string, rule: Rule): Promise<void> {
     log.debug(`orderOnly:`, rule.orderOnly);
 
     for (const i of rule.orderOnly ?? []) {
-        log.verbose(`Checking ${i}`);
+        log.verbose(`Checking order-only ${i}`);
 
         const absTarget = toAbs(i, origin);
         const targets = Object.entries(makefile.targets);
@@ -37,11 +37,11 @@ export async function orderOnly(target: string, rule: Rule): Promise<void> {
             .filtermap(([target, rule]) => matches(toAbs(target, origin), absTarget) ? [target, rule] as [string, Rule] : null)
             .collect();
 
-        log.debug(`Resolved dependency to ${chalk.green(absTarget)}.`);
+        log.debug(`Resolved order-only-dependency to ${chalk.green(absTarget)}.`);
 
         if (dependencies.length > 0) { // the dependency exist in the makefile
             for (const [a, i] of dependencies) {
-                log.debug(`Updating ${a}`, i);
+                log.debug(`Updating order-only dependent ${a}`);
                 
                 if (await updateDependencies(a, i) || force == Force.Absolute)
                     await run(i);
