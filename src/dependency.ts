@@ -10,6 +10,7 @@ import { config } from './index.js';
 import { Rule as Rule } from "./makefile.js";
 import { run, matches, toAbs } from './run.js';
 import { log } from './log.js';
+import { orderOnly } from './orderonly';
 
 /**
  * 
@@ -89,6 +90,9 @@ export async function updateDependencies(target: string, rule: Rule): Promise<bo
     }
 
     log.debug(`${didUpdate ? 'Updated' : 'Unchanged'} ${target}`);
+    log.verbose(`Running Order-Only dependencies`);
+
+    await orderOnly(target, rule);
 
     return didUpdate;
 }
