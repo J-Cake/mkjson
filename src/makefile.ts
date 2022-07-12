@@ -132,13 +132,15 @@ export async function loadMakefile(handle: stream.Readable): Promise<Makefile> {
             throw void log.err(`Invalid Makefile`);
 
     if ('variables' in file)
-        if (typeof file.vars !== 'object' || Array.isArray(file.variables))
+        if (typeof file.variables !== 'object' || Array.isArray(file.variables))
             throw void log.err(`Expected named variable map`);
+        else if (!Object.entries(file.variables).every(([a, i]) => typeof i == 'string' || (Array.isArray(i) && i.every(i => typeof i == 'string'))))
+            throw void log.err(`Expected string or list of strings`);
 
     log.verbose(`Loaded Makefile`);
 
     return {
         targets: file.targets,
-        variables: file.vars
+        variables: file.variables
     } as Makefile;
 }

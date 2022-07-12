@@ -1,4 +1,7 @@
 {
+    "variables": {
+        "npm": "echo ${npm_execpath:-$(which pnpm)}"
+    },
     "targets": {
         "target1": {
             "dependencies": ["target2"],
@@ -11,6 +14,14 @@
         "target3": {
             "dependencies": ["match.js"],
             "run": "touch match.js"
+        },
+        "(t1), (t2)": {
+            "run": "echo $target_0"
+        },
+        "test": {
+            "orderOnly": ["t1"],
+            "phony": true,
+            "echo": "$npm"
         }
     }
 }
