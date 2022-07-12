@@ -1,7 +1,7 @@
 {
     "name": "@j-cake/mkjson",
     "type": "module",
-    "version": "v1.2.0",
+    "version": "v1.2.1",
     "bin": "build/cli.js",
     "main": "build/cli.js",
     "scripts": {
