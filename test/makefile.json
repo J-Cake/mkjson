@@ -19,6 +19,7 @@
             "run": "echo $target_0"
         },
         "test": {
+            "orderOnly": ["t1"],
             "phony": true,
             "echo": "$npm"
         }
