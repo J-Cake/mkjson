@@ -6,7 +6,7 @@ import chalk from 'chalk';
 import IterSync from '@j-cake/jcake-utils/iterSync';
 import Iter from '@j-cake/jcake-utils/iter';
 
-import { config } from './index.js';
+import { config, Force } from './index.js';
 import { Rule as Rule } from "./makefile.js";
 import { run, matches, toAbs } from './run.js';
 import { log } from './log.js';
@@ -20,7 +20,7 @@ export default updateDependencies;
  * @returns Whether the artifact was updated
  */
 export async function orderOnly(target: string, rule: Rule): Promise<void> {
-    const { makefile, makefilePath } = config.get();
+    const { makefile, makefilePath, force } = config.get();
     const origin = makefilePath.split('/').slice(0, -1).join('/');
     const mtime = await fs.stat(toAbs(target, origin))
         .then(stat => stat.mtime.getTime())
@@ -43,7 +43,7 @@ export async function orderOnly(target: string, rule: Rule): Promise<void> {
             for (const [a, i] of dependencies) {
                 log.debug(`Updating ${a}`, i);
                 
-                if (await updateDependencies(a, i))
+                if (await updateDependencies(a, i) || force == Force.Absolute)
                     await run(i);
             }
         }
