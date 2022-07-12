@@ -68,7 +68,7 @@ export async function updateDependencies(target: string, rule: Rule): Promise<bo
     let didUpdate: boolean = false;
 
     for (const i of rule.dependencies ?? []) {
-        log.verbose(`Checking ${i}`);
+        log.verbose(`Checking ${chalk.green(i)}`);
 
         const absTarget = toAbs(i, origin);
         const targets = Object.entries(makefile.targets);
@@ -80,7 +80,7 @@ export async function updateDependencies(target: string, rule: Rule): Promise<bo
 
         if (dependencies.length > 0) { // the dependency exist in the makefile
             for (const [a, i] of dependencies) {
-                log.debug(`Updating ${a}`);
+                log.debug(`Updating ${chalk.green(a)}`);
                 
                 if (await updateDependencies(a, i) || force == Force.Absolute)
                     didUpdate = !void await run(i);
