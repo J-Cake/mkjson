@@ -5,6 +5,7 @@ import * as Format from '@j-cake/jcake-utils/args';
 import { Makefile } from './makefile.js';
 import findMakefile from './makefile.js';
 import buildArtifacts from './run.js';
+import initVars from './vars.js';
 
 export interface Args {
     makefile: Makefile,
@@ -13,6 +14,7 @@ export interface Args {
     synchronous: boolean,
     logLevel: 'err' | 'info' | 'verbose' | 'debug',
     makefilePath: string,
+    env: Record<string, string>
 }
 
 export const config = new StateManager<Args>({
@@ -20,6 +22,7 @@ export const config = new StateManager<Args>({
     logLevel: 'info',
     synchronous: false,
     artifacts: [],
+    env: {}
 });
 
 export default async function main(argv: string[]) {
@@ -40,6 +43,7 @@ export default async function main(argv: string[]) {
     if (!config.get().makefile)
         config.setState({ makefile: await findMakefile() });
 
+    config.setState({ env: await initVars(config.get().makefile.variables) });
     await buildArtifacts(config.get().artifacts)
 
     return 0;

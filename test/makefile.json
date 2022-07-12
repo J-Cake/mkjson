@@ -1,4 +1,7 @@
 {
+    "variables": {
+        "npm": "echo ${npm_execpath:-$(which pnpm)}"
+    },
     "targets": {
         "target1": {
             "dependencies": ["target2"],
@@ -14,6 +17,10 @@
         },
         "(t1), (t2)": {
             "run": "echo $target_0"
+        },
+        "test": {
+            "phony": true,
+            "echo": "$npm"
         }
     }
 }
