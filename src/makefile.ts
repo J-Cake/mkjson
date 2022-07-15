@@ -49,20 +49,34 @@ export default async function findMakefile(path?: string): Promise<Makefile> {
         return await loadMakefile(fss.createReadStream(location));
     } else {
         const segments = process.cwd().split('/');
+        let error: any;
 
         while (segments.length > 0) {
             log.debug(`Searching for makefile in ${chalk.yellow(segments.join('/'))}`);
             const dir = segments.join('/');
 
-            for (const location of [`${dir}/package.json`, `${dir}/makefile.json`, `${dir}/makefile`, `${dir}/Makefile`])
-                if (await fs.stat(location).then(stat => stat.isFile()).catch(() => false)) {
-                    log.verbose(`Found Makefile ${chalk.yellow(location)}`);
-                    config.setState({ makefilePath: location });
-                    return await loadMakefile(fss.createReadStream(location));
-                }
+            searchFile: for (const location of [`${dir}/makefile.json`, `${dir}/makefile.json5`, `${dir}/makefile`, `${dir}/Makefile`, `${dir}/package.json`])
+                if (await fs.stat(location).then(stat => stat.isFile()).catch(() => false))
+                    try {
+                        log.verbose(`Trying Makefile ${chalk.yellow(location)}`);
+                        config.setState({ makefilePath: location });
+                        return await loadMakefile(fss.createReadStream(location))
+                            .then(function (makefile) {
+                                log.verbose(`Loaded Makefile ${chalk.yellow(location)}`);
+                                return makefile;
+                            });
+                    } catch (err) {
+                        if (config.get().logLevel == 'debug')
+                            log.err(error = err);
+
+                        continue searchFile;
+                    }
 
             segments.pop();
         }
+
+        if (error)
+            throw void log.err(error);
     }
 
     throw void log.err(`No makefile found`);
@@ -124,23 +138,29 @@ export function isTarget(t: any): t is Rule {
 }
 
 export async function loadMakefile(handle: stream.Readable): Promise<Makefile> {
-    const { default: JSON } = await import('json5').catch(err => ({ default: JSON })) as { default: typeof global.JSON };
-    const file = JSON.parse(Buffer.concat(await iter.collect(handle)).toString('utf8'));
+    try {
 
-    if ('targets' in file)
-        if (!Object.entries(file.targets).every(([a, i]) => [log.debug(`Checking Target: ${chalk.yellow(a)}`), isTarget(i)][1]))
-            throw void log.err(`Invalid Makefile`);
+        const { default: JSON } = await import('json5').catch(err => ({ default: JSON })) as { default: typeof global.JSON };
+        const file = JSON.parse(Buffer.concat(await iter.collect(handle)).toString('utf8'));
 
-    if ('variables' in file)
-        if (typeof file.variables !== 'object' || Array.isArray(file.variables))
-            throw void log.err(`Expected named variable map`);
-        else if (!Object.entries(file.variables).every(([a, i]) => typeof i == 'string' || (Array.isArray(i) && i.every(i => typeof i == 'string'))))
-            throw void log.err(`Expected string or list of strings`);
+        if (!('targets' in file))
+            throw `Expected ${chalk.yellow('targets')} section in makefile`;
+        else if (!Object.entries(file.targets).every(([a, i]) => [log.debug(`Checking Target: ${chalk.yellow(a)}`), isTarget(i)][1]))
+            throw `Invalid Makefile`;
 
-    log.verbose(`Loaded Makefile`);
+        if ('variables' in file)
+            if (typeof file.variables !== 'object' || Array.isArray(file.variables))
+                throw `Expected named variable map`;
+            else if (!Object.entries(file.variables).every(([a, i]) => typeof i == 'string' || (Array.isArray(i) && i.every(i => typeof i == 'string'))))
+                throw `Expected string or list of strings`;
 
-    return {
-        targets: file.targets,
-        variables: file.variables
-    } as Makefile;
+        log.verbose(`Loaded Makefile`);
+
+        return {
+            targets: file.targets,
+            variables: file.variables
+        } as Makefile;
+    } catch (err) {
+        throw `Invalid Makefile: ${chalk.grey(err instanceof Error ? err.message : err?.toString())}`;
+    }
 }

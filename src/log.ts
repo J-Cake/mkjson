@@ -9,5 +9,5 @@ export const log: Record<Args['logLevel'], (...msg: any[]) => any> = {
     err: (...args: any[]) => ['err', 'info', 'verbose', 'debug'].includes(config.get().logLevel) ? print(chalk.red('error'), ...args) : void 0,
     info: (...args: any[]) => ['info', 'verbose', 'debug'].includes(config.get().logLevel) ? print(chalk.blue('info'), ...args) : void 0,
     verbose: (...args: any[]) => ['verbose', 'debug'].includes(config.get().logLevel) ? print(chalk.cyan('verbose'), ...args) : void 0,
-    debug: (...args: any[]) => ['debug'].includes(config.get().logLevel) ? print(chalk.yellow('debug'), ...args) : void 0,
+    debug: (...args: any[]) => ['debug'].includes(config.get().logLevel) ? print(chalk.magenta('debug'), ...args) : void 0,
 };

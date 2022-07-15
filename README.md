@@ -1,5 +1,9 @@
 # mkjson
 
+> The make-like build tool that lives in your `package.json`.
+
+---
+
 mkjson is a make-like build tool but without shell syntax. With mkjson you can use familiar `makefile` setups with great efficiency, without worrying about weird shell interpretation issues. 
 
 ## Using
