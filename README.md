@@ -1,125 +1,78 @@
-# MKJSON
+# mkjson
 
-MKJSON is a make-like build tool that lives in your `package.json`. It is similar in function to how many other `make` tools work, except that it doesn't rely on shell-like sytax to develop a project map. Using a JSON format is much clearer and yields less ambiguous target and rule patterns which may interfere with certain edge cases. 
+mkjson is a make-like build tool but without shell syntax. With mkjson you can use familiar `makefile` setups with great efficiency, without worrying about weird shell interpretation issues. 
 
-## Usage
+## Using
 
-If you're familiar with traditional `makefile`s, you'll feel right at home here. 
+mkjson recursively searches for any one of four files in the current and any of its parents;
+* `package.json`
+* `makefile`
+* `Makefile`
+* `makefile.json`
 
-By default MKJSON reads from `package.json/targets` (the `/` notation refers to a JSON subobject, rather than a directory. Note this convention is used throughout the document.). Take the following example file:
+> **Note:** JSON5 is supported. Even if `package.json` doesn't support json5, it is valid from `mkjson`'s perspective.
 
-```json
+if any are found in any parent directory, it is considered the project's `makefile`.
+
+All targets must be placed inside the `targets` section in the file regardless of its name. 
+
+```json5
 {
-    "name": "some-awesome-project",
-    "main": "build/cli.js",
-    "version": "0.0.1",
-    "dependencies": {
-        "chalk": "latest",
-        "lodash": "latest"
-        // ... many, many more
-    },
-    "@devDependencies": {
-        "@types/node": "latest",
-        "@types/lodash": "latest",
-        "@j-cake/mkjson": "latest",
-        "esbuild": "latest",
-        "typescript": "latest",
-        // ... many, many more
-    },
-    "targets": {
-        "build/cli.js": {
-            "dependencies": ["./cli.js"],
-            "run": [
-                "mkdir -p build",
-                "ln -s ./cli.js build/cli.js"
-            ]
-        },
-        "build/index.js": {
-            "dependencies": ["src/*.ts"],
-            "run": [
-                "esbuild src/index.ts --outdir=build --bundle --sourcemap --splitting --format=esm --platform=node"
-            ]
-        },
-        "clean": {
-            "run": "rm -rf build node_modules *lock*",
-            "phony": true
-        },
-        "check": {
-            "dependencies": ["src/*.ts"],
-            "run": "tsc -b tsconfig.json",
-            "phony": true
-        },
-        "rebuild": {
-            "dependencies": ["clean", "check", "build/index.js"],
-            "phony": true
-        }
-    }
-}
-```
-
-Whew, bit of a mouthful. The important thing is the `targets` section. Note that each target (like with true `makefile`s) represent actual files on disk. Those that don't are marked with `phony`.
-MKJSON will analyse the filesystem to figure out which targets need to be rebuilt depending on its dependencies. 
-
-As a rule-of-thumb, you should be aware that any target that isn't marked `phony` is attempted to be read from the filesystem, to fetch a modified date. If the file doesn't exist, it is assumed to be new and will be rebuilt. 
-
-A target with a dependency which was more recently modified than it was will be rebuilt, regardless of whether it is marked `phony` (this is actually how `phony` is implemented).
-
-## Best Pracices and dos-and-don'ts.
-
-Projects warranting the use of `make` (especially for JavaScript/TypeScript projects) generally tend to be quite large. `makefile`s are designed for large projects (such as Linux, KDE, etc), and are very efficient to use, however, the program must be designed around the use of `makefile`s.
-
-In JavaScript land, features such as bundling with code-splitting enabled makes apps very light on clients. It is encouraged to split apps into multiple pieces which can be lazy-loaded at runtime. Building two separate resources allows smaller bundles to be built more quickly, making the development, deployment and end user-experience generally more pleasant. 
-
-With `esbuild`, this can be achieved using `--splitting` and `--format=esm` flags. 
-Any lazy-loaded module can then be used through dynamic imports. 
-
-```json
-{
+    "name": "myproject",
     // ...
     "targets": {
-        "build/core.js": {
-            "dependencies": ["core/*.ts", "build/page_+.js"],
-            "run": [
-                "esbuild core/index.ts --outdir=build --bundle --sourcemap --splitting --format=esm --platform=node"
-            ]
-        },
-        "build/page_dashboard.js" {
-            "dependencies": ["src/dashboard/*.ts", "src/dashboard/*.tsx"],
-            "run": [
-                "esbuild src/dashboard/index.tsx --outdir=build --bundle --sourcemap --splitting --format=esm --platform=node"
-            ]
-        },
-        "build/page_profile.js" {
-            "dependencies": ["src/profile/*.ts", "src/profile/*.tsx"],
-            "run": [
-                "esbuild src/profile/index.tsx --outdir=build --bundle --sourcemap --splitting --format=esm --platform=node"
-            ]
-        }
         // ...
     }
 }
 ```
 
-Bundles under `/core/` can be imported asynchronously, yielding a a split bundle.
+## Targets and Rules
 
-```typescript
-// import ...
+Targets are the names of files or build steps. These are any _key_ in the `targets` map in the makefile. They may represent one or multiple files on disk, or a generic name for a _phony_ target, such as `clean`. 
 
-export default async function App(page: 'dashboard' | 'profile') {
-    if (page == 'dashboard')
-        return await import('../src/dashboard/index.tsx')
-    else if (page == 'profile')
-        return await import('../src/profile/index.tsx');
+A rule is the list of properties defined on the target key. These include its dependencies, run steps and other options. 
+
+A rule's build step is executed if any of the following conditions are met:
+
+* The `--force` (-B) option is present
+* The rule is `phony`
+* Any of the target's dependencies were updated
+    * If the dependency represents a file on disk, the target and dependency's modification times are compared. 
+        If the dependency's is greater (the dependency was modified more recently than the target), the target is rebuilt.
+    * If the dependency represents a target, the steps listed above are run recursively.
+
+### Target options
+
+A target may define any combination of the following properties:
+* `dependencies`: Defines a list of targets which must be updated before the build step continues
+* `orderOnly`: Dependencies which are specified purely to retain order. [See GNU make order-only](https://www.gnu.org/software/make/manual/html_node/Prerequisite-Types.html#Prerequisite-Types)
+* `run`: 
+    * If string: run as command as build step
+    * If array of strings: run each string as command separately
+    * If anything else: **Error**
+* `parallel`: Whether the `run` steps should be run in parallel
+* `isolate`: Whether each `run` step should be run in its own shell
+
+## Variables
+
+Variables are useful for holding and retrieving information from the environment. This is useful if for instance you wish to allow compilers to be hot-plugged or to easily swap interpreter versions etc. 
+
+Variables are declared in the makefile's `variables` section. Keys are exported to environment variables, with values set to the `stdout` stream when its value is run as a child process. 
+
+If the value is an array, each is interpreted as a child process and each's stdout is piped into the next's stdin, where the last stdout is captured and used as the value. Analogous to UNIX shell's piping system.
+
+```json5
+{
+    "name": "myproject",
+    // ...
+    "variables": {
+        "value1": ["cat package.json", "jq -r '.'"]
+    },
+    "targets": {
+        "test": {
+            "phony": true,
+            "run": "echo $value1"
+        }
+    }
 }
 ```
-
-The resulting build looks like this:
-
-```
-/build
-    - core.js
-    - page_dashboard*.js
-    - page_profile*.js
-```
-
-and BAM! lazy-loading achieved.
