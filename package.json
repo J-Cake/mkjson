@@ -5,9 +5,9 @@
     "bin": "build/cli.js",
     "main": "build/cli.js",
     "scripts": {
+        "build:rebuild": "tsc -p tsconfig.json && $npm_execpath run build:cli && $npm_execpath run build:meta",
         "build:cli": "mkdir -p build && ln -f cli.js build/cli.js && esbuild src/index.ts --outdir=build --bundle --sourcemap --splitting --platform=node --format=esm",
-        "build:check": "tsc -p tsconfig.json && $npm_execpath run build:cli && $npm_execpath run build:ln",
-        "build:ln": "jq -r '{name, version, type, main: \"cli.js\", bin: \"cli.js\"}' package.json > build/package.json",
+        "build:meta": "cat package.json | jq -r '{name, version, type, main: \"cli.js\", bin: \"cli.js\"}' > build/package.json && ln README.md build/README.md",
         "test": "find test -name \\*.js | xargs -I {} bash -c 'node {}; echo [{}] exited with code $?'"
     },
     "dependencies": {
