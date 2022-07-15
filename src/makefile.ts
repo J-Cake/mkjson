@@ -160,7 +160,7 @@ export async function loadMakefile(handle: stream.Readable): Promise<Makefile> {
             targets: file.targets,
             variables: file.variables
         } as Makefile;
-    } catch (err) {
+    } catch (err: any) {
         throw `Invalid Makefile: ${chalk.grey(err instanceof Error ? err.message : err?.toString())}`;
     }
 }
