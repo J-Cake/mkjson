@@ -1,3 +1,5 @@
+#!/usr/bin/env -S node --enable-source-maps=true
+
 import chalk from 'chalk';
 
 import main from './index.js';
