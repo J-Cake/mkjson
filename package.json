@@ -15,7 +15,7 @@
     },
     "repository": "https://github.com/J-Cake/mkjson",
     "type": "module",
-    "version": "v1.2.3",
+    "version": "v1.2.3-r2",
     "bin": "build/cli.js",
     "main": "build/cli.js",
     "scripts": {
