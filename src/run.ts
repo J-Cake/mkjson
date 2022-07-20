@@ -12,6 +12,7 @@ import { Rule } from './makefile.js';
 import { config } from './index.js';
 import { log } from './log.js';
 import * as dependency from './dependency.js';
+import initVars from './vars.js';
 
 export const select = <T>(obj: any, selector: string[]): T => obj && (selector.length > 0 ? select(obj[selector[0]], selector.slice(1)) : obj);
 export const toAbs = (target: string, origin: string): string => (target.startsWith('/') ? target : target.startsWith('~?') ? `${os.homedir()}/${target.slice(2)}` : (`${origin}/${target}`.replaceAll('//', '/'))).replaceAll(/\.\.\/[^\/]*/g, '').replaceAll(/\.\//g, '/').replaceAll('//', '/');
@@ -92,32 +93,36 @@ export function run(rule: Rule, env: Record<string, string | number> = {}): Prom
         const run = typeof rule.run == 'string' ? [rule.run] : rule.run;
 
         const procenv = {
+            ...process.env,
+            ...config.get().env,
+            ...await initVars(rule.env ?? {}),
             ...env,
             'mkjson': `${process.argv[0]} ${process.argv[1]}`,
-            ...process.env
         };
+
+        const cwd = rule.cwd ?? process.cwd();
 
         if (rule.parallel)
             if (rule.isolate ?? true) {
                 log.info(`Running: ${chalk.grey(run.join(', '))}`);
 
-                return await Promise.all(run.map(i => new Promise<number>(ok => cp.spawn('bash', ['-c', i], { stdio: 'inherit', env: procenv }).once('exit', ok))))
+                return await Promise.all(run.map(i => new Promise<number>(ok => cp.spawn('bash', ['-c', i], { stdio: 'inherit', env: procenv, cwd }).once('exit', ok))))
                     .then(codes => (rule.ignoreFailed || codes.every(i => i == 0)) ? resolve(codes.every(i => i == 0)) : reject(false))
             } else {
                 log.info(`Running: ${chalk.grey(`bash -c ${run.join(' & ')} & wait`)}`);
 
-                return cp.spawn('bash', ['-c', run.join(' & ') + ' & wait'], { stdio: 'inherit', env: procenv })
+                return cp.spawn('bash', ['-c', run.join(' & ') + ' & wait'], { stdio: 'inherit', env: procenv, cwd })
                     .once('exit', code => (rule.ignoreFailed || code == 0) ? resolve(code == 0) : reject(false));
             }
         else
             if (rule.isolate ?? true)
                 for (const i of run) {
                     log.info(`Running: ${chalk.grey(i)}`);
-                    await new Promise(ok => cp.spawn('bash', ['-c', i], { stdio: 'inherit', env: procenv }).once('exit', ok));
+                    await new Promise(ok => cp.spawn('bash', ['-c', i], { stdio: 'inherit', env: procenv, cwd }).once('exit', ok));
                 }
             else {
                 log.info(`Running: ${chalk.grey(`bash -c ${run.join(' && ')}`)}`);
-                await new Promise(ok => cp.spawn('bash', ['-c', run.join(' && ')], { stdio: 'inherit', env: procenv }).once('exit', ok))
+                await new Promise(ok => cp.spawn('bash', ['-c', run.join(' && ')], { stdio: 'inherit', env: procenv, cwd }).once('exit', ok))
                     .then(code => (rule.ignoreFailed || code == 0) ? resolve(code == 0) : reject(false));
             }
 

@@ -19,12 +19,14 @@ export interface Rule {
     phony?: boolean,
     parallel?: boolean,
     ignoreFailed?: boolean,
-    isolate?: boolean
+    isolate?: boolean,
+    env?: Record<string, string | string[]>,
+    cwd?: string
 }
 
 export interface Makefile {
     targets: Record<string, Rule>,
-    variables: Record<string, string>,
+    env: Record<string, string>,
 };
 
 export default async function findMakefile(path?: string): Promise<Makefile> {
@@ -148,17 +150,17 @@ export async function loadMakefile(handle: stream.Readable): Promise<Makefile> {
         else if (!Object.entries(file.targets).every(([a, i]) => [log.debug(`Checking Target: ${chalk.yellow(a)}`), isTarget(i)][1]))
             throw `Invalid Makefile`;
 
-        if ('variables' in file)
-            if (typeof file.variables !== 'object' || Array.isArray(file.variables))
+        if ('env' in file)
+            if (typeof file.env !== 'object' || Array.isArray(file.env))
                 throw `Expected named variable map`;
-            else if (!Object.entries(file.variables).every(([a, i]) => typeof i == 'string' || (Array.isArray(i) && i.every(i => typeof i == 'string'))))
+            else if (!Object.entries(file.env).every(([a, i]) => typeof i == 'string' || (Array.isArray(i) && i.every(i => typeof i == 'string'))))
                 throw `Expected string or list of strings`;
 
         log.verbose(`Loaded Makefile`);
 
         return {
             targets: file.targets,
-            variables: file.variables
+            env: file.env
         } as Makefile;
     } catch (err: any) {
         throw `Invalid Makefile: ${chalk.grey(err instanceof Error ? err.message : err?.toString())}`;
