@@ -88,11 +88,13 @@ export async function updateDependencies(target: string, rule: Rule): Promise<bo
         log.debug(`Resolved dependency to ${chalk.green(absTarget)}.`);
 
         if (dependencies.length > 0) { // the dependency exist in the makefile
-            for (const {target, rule, targetNames} of dependencies) {
+            for (const { target, rule, targetNames } of dependencies) {
                 log.debug(`Updating ${chalk.green(target)}`);
 
                 if (await updateDependencies(target, rule) || force == Force.Absolute)
                     didUpdate = !void await run(rule, _.fromPairs(targetNames.map((i, a) => [`target_${a}`, i])));
+                else
+                    log.info(`Target ${chalk.yellow(target)} is up-to-date`);
             }
         } else if (await isOlder(absTarget, mtime))// the dependency does not exist in the makefile, so it must be a file
             didUpdate = true;
