@@ -51,7 +51,7 @@ export default async function main(argv: string[]) {
     if (!config.get().makefile)
         config.setState({ makefile: await findMakefile() });
 
-    config.setState({ env: await initVars(config.get().makefile.variables) });
+    config.setState({ env: await initVars(config.get().makefile.env) });
     await buildArtifacts(config.get().artifacts)
 
     return 0;

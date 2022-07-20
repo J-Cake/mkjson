@@ -1,6 +1,10 @@
 {
     "name": "@j-cake/mkjson",
     "description": "The make-like build tool that lives in your package.json.",
+    "type": "module",
+    "version": "v1.2.4",
+    "bin": "build/cli.js",
+    "main": "build/cli.js",
     "keywords": [
         "json",
         "makefile",
@@ -14,10 +18,6 @@
         "url": "https://jschneiderprojects.com.au"
     },
     "repository": "https://github.com/J-Cake/mkjson",
-    "type": "module",
-    "version": "v1.2.3-r2",
-    "bin": "build/cli.js",
-    "main": "build/cli.js",
     "scripts": {
         "build:rebuild": "tsc -p tsconfig.json && $npm_execpath run build:cli && $npm_execpath run build:meta",
         "build:cli": "mkdir -p build && ln -f cli.js build/cli.js && esbuild src/index.ts --outdir=build --bundle --sourcemap --splitting --platform=node --format=esm",

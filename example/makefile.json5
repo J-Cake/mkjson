@@ -1,0 +1,45 @@
+{
+    targets: {
+        "./build/index.js": {
+            dependencies: [
+                "src/*.ts",
+                "./build/package.json",
+                "./build/run.js"
+            ],
+            run: "pnpm exec esbuild src/index.ts --outdir=build --bundle --sourcemap --splitting --platform=node --format=esm"
+        },
+        "./build/run.js": {
+            dependencie: [
+                './run.js'
+            ],
+            run: "ln run.js build/run.js"
+        },
+        "./build/package.json": {
+            dependencies: [
+                './package.json'
+            ],
+            run: 'cat package.json | jq -r \'{name} + {version, type, typings, main: "./run.js", "imports": "./index.js"}\' > build/package.json'
+        },
+        run: {
+            dependencies: [
+                './build/index.js'
+            ],
+            phony: true,
+            run: "node ./build"
+        },
+        clean: {
+            phony: true,
+            run: "rm -rf build node_modules *lock*"
+        },
+        configure: {
+            phony: true,
+            parallel: true,
+            isolate: true,
+            run: [
+                "pnpm install",
+                "pnpm exec tsc --project ./tsconfig.json",
+                "$mkjson ./build/index.js"
+            ]
+        }
+    }
+}

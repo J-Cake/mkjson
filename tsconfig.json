@@ -15,7 +15,8 @@
         "rootDirs": ["src"],
         "importHelpers": true,
         "strict": true,
-        "typeRoots": ["node_modules/@types", "lib"]
+        "typeRoots": ["node_modules/@types", "lib"],
+        "lib": ["esnext"]
     },
     "exclude": ["build", "node_modules"],
     "include": ["src", "lib"],
