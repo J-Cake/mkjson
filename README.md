@@ -8,8 +8,9 @@ mkjson is a make-like build tool but without shell syntax. With mkjson you can u
 
 ## Using
 
-mkjson recursively searches for any one of four files in the current and any of its parents;
+mkjson recursively searches for any one of five files in the current and any of its parents;
 * `package.json`
+* `makefile.json5`
 * `makefile`
 * `Makefile`
 * `makefile.json`
@@ -56,12 +57,14 @@ A target may define any combination of the following properties:
     * If anything else: **Error**
 * `parallel`: Whether the `run` steps should be run in parallel
 * `isolate`: Whether each `run` step should be run in its own shell
+* `cwd`: The directory from which the `run` steps are executed
+* `env`: A list of environment variables to pass to the `run` steps.
 
-## Variables
+## Environment Variables
 
 Variables are useful for holding and retrieving information from the environment. This is useful if for instance you wish to allow compilers to be hot-plugged or to easily swap interpreter versions etc. 
 
-Variables are declared in the makefile's `variables` section. Keys are exported to environment variables, with values set to the `stdout` stream when its value is run as a child process. 
+Variables are declared in the makefile's `env` section. Keys are exported to environment variables, with values set to the `stdout` stream when its value is run as a child process. 
 
 If the value is an array, each is interpreted as a child process and each's stdout is piped into the next's stdin, where the last stdout is captured and used as the value. Analogous to UNIX shell's piping system.
 
@@ -69,7 +72,7 @@ If the value is an array, each is interpreted as a child process and each's stdo
 {
     "name": "myproject",
     // ...
-    "variables": {
+    "env": {
         "value1": ["cat package.json", "jq -r '.'"]
     },
     "targets": {
