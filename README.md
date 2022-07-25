@@ -8,7 +8,7 @@ mkjson is a make-like build tool but without shell syntax. With mkjson you can u
 
 ## Using
 
-mkjson recursively searches for any one of five files in the current and any of its parents;
+mkjson recursively searches for any one of five files in the current directory and any of its parents;
 * `package.json`
 * `makefile.json5`
 * `makefile`
