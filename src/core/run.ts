@@ -6,7 +6,7 @@ import os from 'node:os';
 import cp from 'node:child_process';
 import chalk from 'chalk';
 import _ from 'lodash';
-import IterSync from '@j-cake/jcake-utils/iterSync';
+import {IterSync} from '@j-cake/jcake-utils/iter';
 
 import {config} from './index.js';
 import {Rule} from './makefile.js';

@@ -8,7 +8,7 @@ import stream from 'node:stream';
 import os from 'node:os';
 import chalk from 'chalk';
 import _ from 'lodash';
-import * as iter from '@j-cake/jcake-utils/iter';
+import {iter} from '@j-cake/jcake-utils/iter';
 
 import {config} from './index.js';
 import {log} from './log.js';
