@@ -2,7 +2,7 @@
 
 import chalk from 'chalk';
 
-import main from './index.js';
+import main from '#cli';
 
 await main(process.argv.slice(2))
     .catch(err => err && (err instanceof Error ?

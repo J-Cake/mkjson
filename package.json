@@ -19,9 +19,12 @@
     },
     "repository": "https://github.com/J-Cake/mkjson",
     "scripts": {
-        "build:rebuild": "tsc -p tsconfig.json && $npm_execpath run build:cli && $npm_execpath run build:meta",
-        "build:cli": "mkdir -p build && ln -f cli.js build/cli.js && esbuild src/index.ts --outdir=build --bundle --sourcemap --splitting --platform=node --format=esm",
-        "build:meta": "cat package.json | jq -r '{name, description, keywords, author, repository, version, type, main: \"cli.js\", bin: \"cli.js\"}' > build/package.json && ln README.md build/README.md",
+        "build:core": "esbuild src/core/index.ts --outdir=build --bundle --sourcemap --splitting --platform=node --format=esm --external:#core",
+        "build:cli": "esbuild src/cli.ts --outdir=build --bundle --sourcemap --splitting --platform=node --format=esm --external:#core",
+        "build:lib": "esbuild src/lib.ts --outdir=build --bundle --sourcemap --splitting --platform=node --format=esm --external:#core",
+        "build:meta": "cat package.json | jq -r '. * .deploy * {deploy:null} | with_entries(select(.value |. != null))' > build/package.json > build/package.json && ln -f README.md build/README.md",
+        "build": "tsc -p tsconfig.json && cat package.json | jq -r '.scripts | keys_unsorted[] | select(. | startswith(\"build:\"))' | xargs -d \\\\n -I {} $npm_execpath run {}",
+        "clean": "cat .gitignore | xargs -d \\\\n -I {} rm -rf {}",
         "test": "find test -name \\*.js | xargs -I {} bash -c 'node {}; echo [{}] exited with code $?'"
     },
     "dependencies": {
@@ -38,30 +41,24 @@
     "optionalDependencies": {
         "json5": "latest"
     },
-    "targets": {
-        "build/cli.js": {
-            "dependencies": ["build/index.js"],
-            "run": [
-                "mkdir -p build",
-                "ln -f cli.js build/cli.js"
-            ]
-        },
-        "build/index.js": {
-            "dependencies": ["src/*.ts"],
-            "run": "pnpm exec esbuild src/index.ts --outdir=build --bundle --sourcemap --splitting --platform=node --format=esm"
-        },
-        "build/ts/*.js": {
-            "dependencies": ["src/*.ts"],
-            "run": "pnpm exec tsc -p tsconfig.json"
-        },
+    "imports": {
+        "#core": "src/index.ts",
+        "#cli": "./build/cli.js"
+    },
 
-        "check": {
-            "phony": true,
-            "run": "pnpm exec tsc -p tsconfig.json && pnpm run build"
-        },
-        "clean": {
-            "phony": true,
-            "run": "rm -rf node_modules build *lock*"
+    "deploy": {
+        "targets": null,
+        "deploy":  null,
+        "scripts": null,
+        "dependencies": null,
+        "devDependencies": null,
+        "optionalDependencie": null,
+        "main": "./lib.js",
+        "bin": "./cli.js",
+
+        "imports": {
+            "#core": "./index.js",
+            "#cli": "./cli.js"
         }
     }
 }
