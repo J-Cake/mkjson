@@ -3,8 +3,8 @@
     "description": "The make-like build tool that lives in your package.json.",
     "type": "module",
     "version": "v1.3.0",
-    "bin": "build/cli.js",
-    "main": "build/cli.js",
+    "bin": "build/run.js",
+    "main": "build/lib.js",
     "keywords": [
         "json",
         "makefile",
@@ -22,9 +22,9 @@
         "build:core": "esbuild src/core/index.ts --outdir=build --bundle --sourcemap --splitting --platform=node --format=esm --external:#core",
         "build:cli": "esbuild src/cli.ts --outdir=build --bundle --sourcemap --splitting --platform=node --format=esm --external:#core",
         "build:lib": "esbuild src/lib.ts --outdir=build --bundle --sourcemap --splitting --platform=node --format=esm --external:#core",
-        "build:meta": "cat package.json | jq -r '. * .deploy * {deploy:null} | with_entries(select(.value |. != null))' > build/package.json > build/package.json && ln -f README.md build/README.md",
+        "build:meta": "cat package.json | jq -r '. * .deploy * {deploy:null} | with_entries(select(.value |. != null))' > build/package.json > build/package.json && ln -f README.md run.js build",
         "build": "tsc -p tsconfig.json && cat package.json | jq -r '.scripts | keys_unsorted[] | select(. | startswith(\"build:\"))' | xargs -d \\\\n -I {} $npm_execpath run {}",
-        "clean": "cat .gitignore | xargs -d \\\\n -I {} rm -rf {}",
+        "clean": "cat .gitignore | xargs -d \\\\n -I {} sh -c 'rm -rf {}'",
         "test": "find test -name \\*.js | xargs -I {} bash -c 'node {}; echo [{}] exited with code $?'"
     },
     "dependencies": {
@@ -54,7 +54,7 @@
         "devDependencies": null,
         "optionalDependencie": null,
         "main": "./lib.js",
-        "bin": "./cli.js",
+        "bin": "./run.js",
 
         "imports": {
             "#core": "./index.js",
