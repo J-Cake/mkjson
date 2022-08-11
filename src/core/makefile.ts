@@ -3,19 +3,21 @@
  * Host and export types
  */
 
-import fss, { promises as fs } from 'node:fs';
+import fss, {promises as fs} from 'node:fs';
 import stream from 'node:stream';
 import os from 'node:os';
 import chalk from 'chalk';
+import _ from 'lodash';
 import * as iter from '@j-cake/jcake-utils/iter';
 
-import { log } from './log.js';
-import { config } from './index.js';
+import {config} from './index.js';
+import {log} from './log.js';
+import type {TargetHandler} from '../lib.js'
 
 export interface Rule {
     dependencies?: string[],
     orderOnly?: string[],
-    run?: string[],
+    run?: TargetHandler,
     phony?: boolean,
     parallel?: boolean,
     ignoreFailed?: boolean,
@@ -27,61 +29,85 @@ export interface Rule {
 export interface Makefile {
     targets: Record<string, Rule>,
     env: Record<string, string>,
-};
+}
 
-export default async function findMakefile(path?: string): Promise<Makefile> {
-    if (path == '--') {
-        log.verbose(`Reading makefile from stdin`);
-        config.setState({ makefilePath: process.cwd() });
-        return loadMakefile(process.stdin);
-    } else if (path) {
-        const location = await fs.realpath((path.startsWith('/') ? path :
-            path.startsWith('~/') ? os.homedir() + path.slice(2) :
-                path.startsWith('./') ? process.cwd() + path.slice(2) :
-                    path)
-            .replaceAll('/./', '/')
-            .replaceAll(/[^\/]+\/\.\.\//g, ''));
+export default async function findMakefile(path?: string): Promise<void> {
+    const find = async function (path?: string): Promise<{ mk: Makefile, location: string }> {
+        if (path == '--') {
+            log.verbose(`Reading makefile from stdin`);
+            return {
+                mk: await constructFromJSON(process.stdin),
+                location: process.cwd()
+            };
+        } else if (path) {
+            const location = await fs.realpath((path.startsWith('/') ? path :
+                path.startsWith('~/') ? os.homedir() + path.slice(2) :
+                    path.startsWith('./') ? process.cwd() + path.slice(2) :
+                        path)
+                .replaceAll('/./', '/')
+                .replaceAll(/[^\/]+\/\.\.\//g, ''));
 
-        log.verbose(`Resolving Makefile: ${path} => ${location}`);
+            log.verbose(`Resolving Makefile: ${path} => ${location}`);
 
-        if (await fs.stat(location).then(stat => !stat.isFile()).catch(() => true))
-            throw void log.err(`Invalid makefile: ${chalk.yellow(location)}`);
+            if (await fs.stat(location).then(stat => !stat.isFile()).catch(() => true))
+                throw void log.err(`Invalid makefile: ${chalk.yellow(location)}`);
 
-        config.setState({ makefilePath: location });
-        return await loadMakefile(fss.createReadStream(location));
-    } else {
-        const segments = process.cwd().split('/');
-        let error: any;
-
-        while (segments.length > 0) {
-            log.debug(`Searching for makefile in ${chalk.yellow(segments.join('/'))}`);
-            const dir = segments.join('/');
-
-            searchFile: for (const location of [`${dir}/makefile.json`, `${dir}/makefile.json5`, `${dir}/makefile`, `${dir}/Makefile`, `${dir}/package.json`])
-                if (await fs.stat(location).then(stat => stat.isFile()).catch(() => false))
-                    try {
-                        log.verbose(`Trying Makefile ${chalk.yellow(location)}`);
-                        config.setState({ makefilePath: location });
-                        return await loadMakefile(fss.createReadStream(location))
-                            .then(function (makefile) {
-                                log.verbose(`Loaded Makefile ${chalk.yellow(location)}`);
-                                return makefile;
-                            });
-                    } catch (err) {
-                        if (config.get().logLevel == 'debug')
-                            log.err(error = err);
-
-                        continue searchFile;
+            if (location.split('/')?.pop()?.split('.').find(i => i == 'js') && !config.get().blockScripts) {
+                log.verbose(`Loading as script`);
+                return {
+                    location,
+                    mk: {
+                        targets: {},
+                        env: await import(location) ?? {}
                     }
+                }
+            } else
+                return {
+                    location,
+                    mk: await constructFromJSON(fss.createReadStream(location))
+                }
+        } else {
+            const segments = process.cwd().split('/');
+            let error: any;
 
-            segments.pop();
+            while (segments.length > 0) {
+                log.debug(`Searching for makefile in ${chalk.yellow(segments.join('/'))}`);
+                const dir = segments.join('/');
+
+                searchFile: for (const location of [`${dir}/makefile.js`, `${dir}/makefile.json`, `${dir}/makefile.json5`, `${dir}/makefile`, `${dir}/Makefile`, `${dir}/package.json`])
+                    if (await fs.stat(location).then(stat => stat.isFile()).catch(() => false))
+                        try {
+                            log.verbose(`Trying Makefile ${chalk.yellow(location)}`);
+                            return {
+                                location,
+                                mk: await constructFromJSON(fss.createReadStream(location))
+                                    .then(function (makefile) {
+                                        log.verbose(`Loaded Makefile ${chalk.yellow(location)}`);
+                                        return makefile;
+                                    })
+                            }
+                        } catch (err) {
+                            if (config.get().logLevel == 'debug')
+                                log.err(error = err);
+
+                            continue searchFile;
+                        }
+
+                segments.pop();
+            }
+
+            if (error)
+                throw void log.err(error);
+
+            throw void log.err(`No makefile found`);
         }
-
-        if (error)
-            throw void log.err(error);
     }
 
-    throw void log.err(`No makefile found`);
+    const mk = await find(path);
+    config.setState(prev => ({
+        makefilePath: mk.location,
+        makefile: _.merge({}, prev.makefile, mk)
+    }));
 }
 
 export function isTarget(t: any): t is Rule {
@@ -139,10 +165,9 @@ export function isTarget(t: any): t is Rule {
     return true;
 }
 
-export async function loadMakefile(handle: stream.Readable): Promise<Makefile> {
+export async function constructFromJSON(handle: stream.Readable): Promise<Makefile> {
     try {
-
-        const { default: JSON } = await import('json5').catch(err => ({ default: JSON })) as { default: typeof global.JSON };
+        const {default: JSON} = await import('json5').catch(err => ({default: JSON})) as { default: typeof global.JSON };
         const file = JSON.parse(Buffer.concat(await iter.collect(handle)).toString('utf8'));
 
         if (!('targets' in file))

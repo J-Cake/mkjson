@@ -8,9 +8,9 @@ import chalk from 'chalk';
 import _ from 'lodash';
 import IterSync from '@j-cake/jcake-utils/iterSync';
 
-import { Rule } from './makefile.js';
-import { config } from './index.js';
-import { log } from './log.js';
+import {config} from './index.js';
+import {Rule} from './makefile.js';
+import {log} from './log.js';
 import * as dependency from './dependency.js';
 import initVars from './vars.js';
 
@@ -41,7 +41,7 @@ export function matches(target: string, request: string, origin: string): string
 }
 
 export default async function buildArtifacts(artifacts: string[]): Promise<void> {
-    const { makefile, makefilePath, force } = config.get();
+    const {makefile, makefilePath, force} = config.get();
     const origin = makefilePath.split('/').slice(0, -1).join('/');
 
     for (const i of artifacts.length >= 1 ? artifacts : [Object.keys(config.get().makefile.targets)[0]]) {
@@ -52,8 +52,8 @@ export default async function buildArtifacts(artifacts: string[]): Promise<void>
             .filtermap(function ([target, rule]) {
                 const match = matches(target, absTarget, origin);
                 if (match)
-                    return { 
-                        target, 
+                    return {
+                        target,
                         rule,
                         targetNames: match
                     };
@@ -78,8 +78,9 @@ export default async function buildArtifacts(artifacts: string[]): Promise<void>
 }
 
 /**
- * 
+ *
  * @param rule Instructions on how to build the artifact, as well as its dependencies
+ * @param env Environment variables to pass to the child process/es
  * @returns Whether the commands completed successfully
  */
 export function run(rule: Rule, env: Record<string, string | number> = {}): Promise<boolean> {
@@ -89,8 +90,6 @@ export function run(rule: Rule, env: Record<string, string | number> = {}): Prom
     return new Promise(async function (resolve, reject) {
         if (!rule.run)
             return resolve(true);
-
-        const run = typeof rule.run == 'string' ? [rule.run] : rule.run;
 
         const procenv = {
             ...process.env,
@@ -102,29 +101,46 @@ export function run(rule: Rule, env: Record<string, string | number> = {}): Prom
 
         const cwd = rule.cwd ?? process.cwd();
 
-        if (rule.parallel)
-            if (rule.isolate ?? true) {
-                log.info(`Running: ${chalk.grey(run.join(', '))}`);
+        if (typeof rule.run == 'function')
+            await rule.run();
+        else {
+            const run = typeof rule.run == 'string' ? [rule.run] : rule.run;
+            if (rule.parallel)
 
-                return await Promise.all(run.map(i => new Promise<number>(ok => cp.spawn('bash', ['-c', i], { stdio: 'inherit', env: procenv, cwd }).once('exit', ok))))
-                    .then(codes => (rule.ignoreFailed || codes.every(i => i == 0)) ? resolve(codes.every(i => i == 0)) : reject(false))
-            } else {
-                log.info(`Running: ${chalk.grey(`bash -c ${run.join(' & ')} & wait`)}`);
+                if (rule.isolate ?? true) {
+                    log.info(`Running: ${chalk.grey(run.join(', '))}`);
 
-                return cp.spawn('bash', ['-c', run.join(' & ') + ' & wait'], { stdio: 'inherit', env: procenv, cwd })
-                    .once('exit', code => (rule.ignoreFailed || code == 0) ? resolve(code == 0) : reject(false));
-            }
-        else
-            if (rule.isolate ?? true)
+                    return await Promise.all(run.map(i => new Promise<number>(ok => cp.spawn('bash', ['-c', i], {
+                        stdio: 'inherit',
+                        env: procenv,
+                        cwd
+                    }).once('exit', ok))))
+                        .then(codes => (rule.ignoreFailed || codes.every(i => i == 0)) ? resolve(codes.every(i => i == 0)) : reject(false))
+                } else {
+                    log.info(`Running: ${chalk.grey(`bash -c ${run.join(' & ')} & wait`)}`);
+
+                    return cp.spawn('bash', ['-c', run.join(' & ') + ' & wait'], {stdio: 'inherit', env: procenv, cwd})
+                        .once('exit', code => (rule.ignoreFailed || code == 0) ? resolve(code == 0) : reject(false));
+                }
+            else if (rule.isolate ?? true)
                 for (const i of run) {
                     log.info(`Running: ${chalk.grey(i)}`);
-                    await new Promise(ok => cp.spawn('bash', ['-c', i], { stdio: 'inherit', env: procenv, cwd }).once('exit', ok));
+                    await new Promise(ok => cp.spawn('bash', ['-c', i], {
+                        stdio: 'inherit',
+                        env: procenv,
+                        cwd
+                    }).once('exit', ok));
                 }
             else {
                 log.info(`Running: ${chalk.grey(`bash -c ${run.join(' && ')}`)}`);
-                await new Promise(ok => cp.spawn('bash', ['-c', run.join(' && ')], { stdio: 'inherit', env: procenv, cwd }).once('exit', ok))
+                await new Promise(ok => cp.spawn('bash', ['-c', run.join(' && ')], {
+                    stdio: 'inherit',
+                    env: procenv,
+                    cwd
+                }).once('exit', ok))
                     .then(code => (rule.ignoreFailed || code == 0) ? resolve(code == 0) : reject(false));
             }
+        }
 
         resolve(true);
     });
