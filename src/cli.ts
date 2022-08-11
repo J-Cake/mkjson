@@ -1,7 +1,7 @@
 import chalk from "chalk";
 
-import * as iterSync from '@j-cake/jcake-utils/iterSync';
 import * as Format from '@j-cake/jcake-utils/args';
+import {iterSync} from '@j-cake/jcake-utils/iter';
 
 import {buildArtifacts, config, findMakefile, Force, initVars, log} from "#core";
 

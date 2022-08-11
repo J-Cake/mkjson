@@ -4,7 +4,7 @@
 import { promises as fs } from 'node:fs';
 import chalk from 'chalk';
 import _ from 'lodash';
-import IterSync from '@j-cake/jcake-utils/iterSync';
+import {IterSync} from '@j-cake/jcake-utils/iter';
 
 import { config, Force } from './index.js';
 import { Rule as Rule } from "./makefile.js";

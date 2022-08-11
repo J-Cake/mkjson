@@ -1,5 +1,5 @@
 import cp from 'node:child_process';
-import * as iter from '@j-cake/jcake-utils/iter';
+import {iter} from '@j-cake/jcake-utils/iter';
 
 export default async function initVars(vars: Record<string, string | string[]>): Promise<Record<string, string>> {
     const names: Record<string, string> = {};
