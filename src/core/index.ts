@@ -5,6 +5,7 @@ export {default as buildArtifacts} from './run.js';
 export {default as initVars} from './vars.js';
 
 export {run} from "./run.js";
+export {log} from "./log.js";
 
 export type {Rule} from './makefile.js';
 

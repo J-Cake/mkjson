@@ -2,7 +2,7 @@
     "name": "@j-cake/mkjson",
     "description": "The make-like build tool that lives in your package.json.",
     "type": "module",
-    "version": "v1.2.4",
+    "version": "v1.3.0",
     "bin": "build/cli.js",
     "main": "build/cli.js",
     "keywords": [

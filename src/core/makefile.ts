@@ -74,7 +74,7 @@ export default async function findMakefile(path?: string): Promise<void> {
                 log.debug(`Searching for makefile in ${chalk.yellow(segments.join('/'))}`);
                 const dir = segments.join('/');
 
-                searchFile: for (const location of [`${dir}/makefile.json`, `${dir}/makefile.json5`, `${dir}/makefile`, `${dir}/Makefile`, `${dir}/package.json`])
+                searchFile: for (const location of [`${dir}/makefile.js`, `${dir}/makefile.json`, `${dir}/makefile.json5`, `${dir}/makefile`, `${dir}/Makefile`, `${dir}/package.json`])
                     if (await fs.stat(location).then(stat => stat.isFile()).catch(() => false))
                         try {
                             log.verbose(`Trying Makefile ${chalk.yellow(location)}`);
