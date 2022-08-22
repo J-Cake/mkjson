@@ -46,7 +46,6 @@ export default async function main(argv: string[], pkg: typeof import('../packag
 
     if (!config.get().makefile)
         await findMakefile();
-    // config.setState({makefile: await findMakefile()});
 
     config.setState({env: await initVars(config.get().makefile.env)});
     await buildArtifacts(config.get().artifacts)

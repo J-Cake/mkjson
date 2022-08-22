@@ -106,7 +106,7 @@ export default async function findMakefile(path?: string): Promise<void> {
     const mk = await find(path);
     config.setState(prev => ({
         makefilePath: mk.location,
-        makefile: _.merge({}, prev.makefile, mk)
+        makefile: _.merge({}, prev.makefile, mk.mk)
     }));
 }
 
