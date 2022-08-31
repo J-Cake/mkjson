@@ -22,6 +22,10 @@
             "dependencies": ["t2"],
             "phony": true,
             "echo": "$npm"
+        },
+
+        "inherit": {
+            "run": "echo $mkjson"
         }
     }
 }

@@ -8,7 +8,7 @@ import chalk from 'chalk';
 import _ from 'lodash';
 import {IterSync} from '@j-cake/jcake-utils/iter';
 
-import {config} from './index.js';
+import {config, Force} from './index.js';
 import {Rule} from './makefile.js';
 import {log} from './log.js';
 import * as dependency from './dependency.js';
@@ -91,12 +91,21 @@ export function run(rule: Rule, env: Record<string, string | number> = {}): Prom
         if (!rule.run)
             return resolve(true);
 
+        const args = config.get();
+
         const procenv = {
             ...process.env,
             ...config.get().env,
             ...await initVars(rule.env ?? {}),
             ...env,
-            'mkjson': `${process.argv[0]} ${process.argv[1]}`,
+            'mkjson': [
+                process.argv[0],
+                process.argv[1],
+                args.force == Force.Absolute ? '--force-absolute' : args.force == Force.Superficial ? '--force' : '',
+                args.synchronous ? '--synchronous' : '',
+                args.blockScripts ? '--no-scripts' : '',
+                `--log-level ${args.logLevel}`
+            ].filter(i => i.length > 0).join(' '),
         };
 
         const cwd = rule.cwd ?? process.cwd();
