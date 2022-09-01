@@ -1,16 +1,7 @@
 import _ from 'lodash';
-import type {Rule} from "#core";
-import {config, run} from '#core';
+import * as mkjson from '#core';
 
-/**
- * Represents the action to perform when a dependency is outdated.
- * If function:
- *  - Run function as normal
- * If string:
- * - Run string as command
- * - Recommended approach is the [shell](#shell) function
- */
-export declare type TargetHandler = string | string[] | (() => Promise<void>);
+import * as Shell from './shell.js';
 
 /**
  * Represents a rule configuration
@@ -34,31 +25,17 @@ export declare interface TargetOptions {
  * @param handler The action to perform when the target is outdated.
  * @param options: {Partial<TargetOptions>} Target configurations
  */
-export default function target(specifier: string | string[], handler?: TargetHandler, options?: Partial<TargetOptions>) {
+export default function target(specifier: string | string[], handler?: Shell.TargetHandler, options?: Partial<TargetOptions>) {
     if (specifier?.length > 0)
-        config.setState(prev => ({
-            makefile: {
-                ...prev.makefile,
-                targets: {
-                    ...prev.makefile?.targets ?? {},
-                    ..._.fromPairs((Array.isArray(specifier) ? specifier : [specifier]).map(i => [i, {run: handler}]))
-                }
+        mkjson.Makefile.targets.setState(prev => ({
+            ...prev,
+            targets: {
+                ...prev.makefile ?? {},
+                ..._.fromPairs((Array.isArray(specifier) ? specifier : [specifier]).map(i => [i, {run: handler}]))
             }
         }));
     else throw `Target specifier must be a string or an array of strings`;
 };
 
-export declare interface ShellOptions {
-    isolate: boolean,
-    parallel: boolean,
-    ignoreFailure: boolean,
-    cwd: boolean,
-    env: boolean
-}
-
-/**
- * Runs a shell command
- * @param command The command/s to run
- * @param options The options to run the command with
- */
-export const shell = (command: string | string[], options?: Partial<ShellOptions>): TargetHandler => async (): Promise<void> => void await run(_.merge({run: command} as Rule, options ?? {}));
+export {shell} from './shell.js';
+export * as Shell from './shell.js'

@@ -3,7 +3,8 @@ import chalk from "chalk";
 import * as Format from '@j-cake/jcake-utils/args';
 import {iterSync} from '@j-cake/jcake-utils/iter';
 
-import {buildArtifacts, config, findMakefile, Force, initVars, log} from "#core";
+import * as mkjson from "#core";
+import log from "./core/log.js";
 
 export const help = (pkg: typeof import('../package.json')) => `Usage: ${chalk.whiteBright(pkg.name)} [options] [artifacts]
 
@@ -24,31 +25,47 @@ Artifacts:
 export default async function main(argv: string[], pkg: typeof import('../package.json')) {
     const logLevel = Format.oneOf(['err', 'info', 'verbose', 'debug'] as const, false);
 
+    mkjson.log.debug(`Loading plugins`);
+    for (const i of pkg.plugins)
+        await mkjson.Plugin.loadPlugin(i);
+
     for (const {current: i, skip: next} of iterSync.peekable(argv))
-        if (i === '--makefile' || i == '-m')
-            await findMakefile(next());
-        else if (i === '--log-level')
-            config.setState({logLevel: logLevel(next())});
-        else if (i === '--force' || i == '-B' || i == '-f')
-            config.setState({force: Force.Superficial});
-        else if (i == '--force-absolute')
-            config.setState({force: Force.Absolute});
-        else if (i === '--synchronous' || i == '-S')
-            config.setState({synchronous: true});
-        else if (i === '--no-scripts')
-            config.setState({blockScripts: true});
-        else if (i === '--version' || i == '-v')
-            return void log.info(`Version: ${chalk.whiteBright(pkg.version)}`);
-        else if (i === '--help')
-            return void log.info(help(pkg));
+        if (i == '--makefile' || i == '-m')
+            await mkjson.Plugin.loadMakefile(next());
+        else if (i == '--log-level')
+            mkjson.config.setState({logLevel: logLevel(next())});
+        else if (i == '--force' || i == '-B' || i == '-f')
+            mkjson.config.setState({force: true});
+        else if (i == '--all')
+            mkjson.config.setState({all: true});
+        else if (i == '--synchronous' || i == '-S')
+            mkjson.config.setState({synchronous: true});
+        else if (i == '--no-scripts')
+            mkjson.config.setState({blockScripts: true});
+        else if (i == '--version' || i == '-v')
+            return void mkjson.log.info(`Version: ${chalk.whiteBright(pkg.version)}`);
+        else if (i == '--help')
+            return void mkjson.log.info(help(pkg));
         else
-            config.setState(prev => ({artifacts: [...prev.artifacts, i]}));
+            mkjson.config.setState(prev => ({artifacts: [...prev.artifacts, i]}));
 
-    if (!config.get().makefile)
-        await findMakefile();
+    mkjson.log.debug(`Loading Makefile`)
 
-    config.setState({env: await initVars(config.get().makefile.env)});
-    await buildArtifacts(config.get().artifacts)
+    if (mkjson.config.get().makefilePath.length <= 0)
+        await mkjson.Plugin.loadMakefile('makefile.json')
+            .catch(() => mkjson.Plugin.loadMakefile('makefile.json5'))
+            .catch(() => mkjson.Plugin.loadMakefile('makefile.js'))
+            .catch(() => mkjson.log.err(`No makefile was found.`));
 
-    return 0;
+    const artifacts = mkjson.config.get().artifacts;
+    for (const i of artifacts) {
+        const rules = mkjson.Makefile.getRule(i);
+
+        if (rules.length <= 0)
+            throw log.err(`No rule found for ${chalk.blue(i)}`);
+
+        await mkjson.run(rules);
+    }
+
+    return true;
 }
