@@ -3,6 +3,7 @@
     "version": "1.0.0",
     "type": "module",
     "dependencies": {
-        "mkjson": "link:../build"
+        "mkjson": "link:../build",
+        "@j-cake/jcake-utils": "latest"
     }
 }

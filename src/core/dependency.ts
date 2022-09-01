@@ -5,14 +5,17 @@ import {Iter} from "@j-cake/jcake-utils/iter";
 import {getRule, MatchResult} from "./targetList.js";
 import log from "./log.js";
 
+/**
+ * Recursively run a build step, and ensure its dependencies are up-to-date.
+ * @param rules a list of rules to run
+ */
 export default async function run(rules: MatchResult[]): Promise<boolean> {
     let didRun = false;
     for (const rule of rules) {
-
-        console.log(rule.rule.dependencies);
-
-        const dependencies = (rule.rule.dependencies ?? [])
+        const dependencies = await Iter(rule.rule.dependencies ?? [])
             .map(i => getRule(i))
+            .await()
+            .collect();
 
         const uniqueDependencies: string[] = [];
 
@@ -30,7 +33,7 @@ export default async function run(rules: MatchResult[]): Promise<boolean> {
                 dependency: i
             }))
             .await()
-            .map(async i => (i.isUpToDate ? true : await run(getRule(i.dependency)), false) as boolean)
+            .map(async i => (i.isUpToDate ? true : await run(await getRule(i.dependency)), false) as boolean)
             .await()
             .collect()
             .then(dependencies => !dependencies.includes(false));

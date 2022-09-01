@@ -59,7 +59,7 @@ export default async function main(argv: string[], pkg: typeof import('../packag
 
     const artifacts = mkjson.config.get().artifacts;
     for (const i of artifacts) {
-        const rules = mkjson.Makefile.getRule(i);
+        const rules = await mkjson.Makefile.getRule(i);
 
         if (rules.length <= 0)
             throw log.err(`No rule found for ${chalk.blue(i)}`);

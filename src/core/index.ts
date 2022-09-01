@@ -12,3 +12,6 @@ export * as Log from './log.js';
 
 export {default as run} from './dependency.js';
 export * as Dependency from './dependency.js';
+
+export {default as lsGlob} from './path.js';
+export * as Glob from './path.js';

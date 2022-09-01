@@ -33,6 +33,12 @@ export function shell(command: string | string[], options?: Partial<ShellOptions
 
 // export const shell = (command: string | string[], options?: Partial<ShellOptions>): TargetHandler => async (): Promise<void> => void await run(_.merge({run: command} as Makefile.Rule, options ?? {}));
 
+/**
+ * Run a list of command-line programs and pipe the outputs of the previous into the input of the enxt.
+ * @param command The list of command-line programs to run
+ * @param env A set of environment variables to invoke the CLI programs with
+ * @returns Iterator over the last stdout stream of the list of programs.
+ */
 export function pipe(command: string | string[], env?: Record<string, string>): iter.Iter<Buffer> {
     const commands = Array.isArray(command) ? command : [command];
 

@@ -1,11 +1,4 @@
-import {TargetList} from "./targetList.js";
 import StateManager from "@j-cake/jcake-utils/state";
-
-export enum Force {
-    None,
-    Superficial,
-    Absolute
-}
 
 export interface Args {
     artifacts: string[],

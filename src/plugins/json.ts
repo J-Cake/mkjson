@@ -21,6 +21,11 @@ export type JSONMakefile = {
     targets?: Record<string, JSONRule>
 }
 
+/**
+ * Check whether a rule matches the schema for rules
+ * @param obj
+ * @param artifact
+ */
 export function isRule(obj: any, artifact: string): obj is JSONRule {
     if (typeof obj != 'object')
         return false;
@@ -83,6 +88,10 @@ export function isRule(obj: any, artifact: string): obj is JSONRule {
     return true;
 }
 
+/**
+ * Check whether the given object matches the JSON schema
+ * @param obj
+ */
 export function isMakefile(obj: any): obj is JSONMakefile {
     if (typeof obj != 'object')
         return false;
@@ -106,6 +115,10 @@ export function isMakefile(obj: any): obj is JSONMakefile {
     return true;
 }
 
+/**
+ * Convert the JSON Makefile into the internal representation
+ * @param makefile
+ */
 export async function buildMakefile(makefile: JSONMakefile): Promise<TargetList> {
     const env = {};
 
@@ -136,6 +149,10 @@ export async function buildMakefile(makefile: JSONMakefile): Promise<TargetList>
     return targets;
 }
 
+/**
+ * Load a JSON makefile
+ * @param hint Can be any file ending in `.json` or `.json5`
+ */
 export async function loadMakefile(hint: string): Promise<TargetList> {
     if (!['json', 'json5'].some(i => hint.toLowerCase().endsWith(i)))
         throw `${chalk.blue('.json')} or similar extensions are required`;

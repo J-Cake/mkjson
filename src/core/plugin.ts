@@ -17,6 +17,10 @@ export type Plugin = Partial<{
 
 export const plugins = new StateManager<Record<string, Plugin>>({});
 
+/**
+ * Loads a plugin - Add any compatible functionality to a list of loaded sources
+ * @param source
+ */
 export async function loadPlugin(source: string): Promise<Plugin> {
     const fileDir = `${import.meta.url.match(/^file:\/\/(\/.*)\/[^\/]*$/)?.[1]}/${source}`
         .replaceAll('/./', '/')
@@ -36,6 +40,10 @@ export async function loadPlugin(source: string): Promise<Plugin> {
     return plugin;
 }
 
+/**
+ * Uses loaded plugins to find and load makefiles from a user-provided hint
+ * @param hint A string which indicates where to locate or how to load a particular makefile
+ */
 export async function loadMakefile(hint: string): Promise<void> {
     const loaded = Object.entries(plugins.get());
 
