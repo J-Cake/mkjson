@@ -1,11 +1,13 @@
 import {promises as fs} from 'node:fs';
 import chalk from 'chalk';
 import _ from 'lodash';
-import {Iter} from "@j-cake/jcake-utils/iter";
+import {iter, Iter} from "@j-cake/jcake-utils/iter";
 
 import {getRule, MatchResult} from "./targetList.js";
 import log from "./log.js";
 import {config} from "./config.js";
+import * as path from "./path.js";
+import lsGlob from "./path.js";
 
 /**
  * Recursively run a build step, and ensure its dependencies are up-to-date.
@@ -14,16 +16,30 @@ import {config} from "./config.js";
 export default async function run(rules: MatchResult[]): Promise<boolean> {
     let didRun = false;
     for (const rule of rules) {
-        const dependencies = await Iter(rule.rule.dependencies ?? [])
-            .map(i => getRule(i))
-            .await()
+
+        const depList = rule.rule.dependencies ?? [];
+        const dependencies = await Iter<{ file: string, wildcards: string[] }>([])
+            .interleave(...depList
+                    .map(i => lsGlob(path.toAbs(i))))
+            .concat(await Promise
+                .all(depList
+                    .map(i => getRule(i)))
+                .then(res => res
+                    .flat()))
+            .filter(i => !!i)
             .collect();
+
+        // TODO: This is a good place for optimisation
+
+        console.log(rule.rule.dependencies?.map(i => path.toAbs(i)), dependencies);
 
         const uniqueDependencies: string[] = [];
 
         for (const i of dependencies.flat().map(i => i.file))
             if (!uniqueDependencies.includes(i))
                 uniqueDependencies.push(i);
+
+        log.debug(`Dependencies`, uniqueDependencies);
 
         const isUpToDate = await Iter(uniqueDependencies)
             .map(async i => ({
@@ -35,6 +51,7 @@ export default async function run(rules: MatchResult[]): Promise<boolean> {
                 dependency: i
             }))
             .await()
+            .map(i => (i.isUpToDate ? log.debug(`${chalk.yellow(i.dependency)} hasn't been modified`) : log.debug(`${chalk.yellow(i.dependency)} was modified`), i))
             .map(async i => (i.isUpToDate ? true : await run(await getRule(i.dependency)), false) as boolean)
             .await()
             .collect()
