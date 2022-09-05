@@ -1,6 +1,9 @@
 import cp from 'node:child_process';
-import stream from "stream";
+import stream from "node:stream";
+import chalk from 'chalk';
 import {Iter, iter} from "@j-cake/jcake-utils/iter";
+
+import {log, config} from '#core';
 
 /**
  * Represents the action to perform when a dependency is outdated.
@@ -16,8 +19,8 @@ export declare interface ShellOptions {
     isolate: boolean,
     parallel: boolean,
     ignoreFailure: boolean,
-    cwd: boolean,
-    env: boolean
+    cwd: string,
+    env: Record<string, string>
 }
 
 /**
@@ -26,8 +29,61 @@ export declare interface ShellOptions {
  * @param options The options to run the command with
  */
 export function shell(command: string | string[], options?: Partial<ShellOptions>) {
-    return async function (target: string, env: Record<string, string>): Promise<boolean> {
-        return false;
+    return function (target: string, env: Record<string, string>): Promise<boolean> {
+        return new Promise(async function (resolve, reject) {
+            const cmd = Array.isArray(command) ? command : [command];
+            const cwd = options?.cwd ?? process.cwd();
+            const args = config.get();
+            const procenv = {
+                ...process.env,
+                ...options?.env ?? {},
+                mkjson: [
+                    process.argv[0],
+                    process.argv[1],
+                    args.force ? '--force' : '',
+                    args.synchronous ? '--synchronous' : '',
+                    args.blockScripts ? '--no-scripts' : '',
+                    `--log-level ${args.logLevel}`
+                ].filter(i => i.length > 0).join(' ')
+            };
+
+            if (options?.parallel)
+                if (options?.isolate ?? true) {
+                    log.info(`Running: ${chalk.grey(cmd.join(', '))}`);
+
+                    return await Promise.all(cmd.map(i => new Promise<number>(ok => cp.spawn('bash', ['-c', i], {
+                        stdio: 'inherit',
+                        env: procenv,
+                        cwd
+                    }).once('exit', ok))))
+                        .then(codes => (options?.ignoreFailure || codes.every(i => i == 0)) ? resolve(codes.every(i => i == 0)) : reject(false))
+                } else {
+                    log.info(`Running: ${chalk.grey(`bash -c ${cmd.join(' & ')} & wait`)}`);
+
+                    return cp.spawn('bash', ['-c', cmd.join(' & ') + ' & wait'], {stdio: 'inherit', env: procenv, cwd})
+                        .once('exit', code => (options?.ignoreFailure || code == 0) ? resolve(code == 0) : reject(false));
+                }
+            else if (options?.isolate ?? true)
+                for (const i of cmd) {
+                    log.info(`Running: ${chalk.grey(i)}`);
+                    await new Promise(ok => cp.spawn('bash', ['-c', i], {
+                        stdio: 'inherit',
+                        env: procenv,
+                        cwd
+                    }).once('exit', ok));
+                }
+            else {
+                log.info(`Running: ${chalk.grey(`bash -c ${cmd.join(' && ')}`)}`);
+                await new Promise(ok => cp.spawn('bash', ['-c', cmd.join(' && ')], {
+                    stdio: 'inherit',
+                    env: procenv,
+                    cwd
+                }).once('exit', ok))
+                    .then(code => (options?.ignoreFailure || code == 0) ? resolve(code == 0) : reject(false));
+            }
+
+            resolve(true);
+        });
     }
 }
 

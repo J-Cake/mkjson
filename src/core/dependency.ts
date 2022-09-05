@@ -1,9 +1,11 @@
 import {promises as fs} from 'node:fs';
 import chalk from 'chalk';
+import _ from 'lodash';
 import {Iter} from "@j-cake/jcake-utils/iter";
 
 import {getRule, MatchResult} from "./targetList.js";
 import log from "./log.js";
+import {config} from "./config.js";
 
 /**
  * Recursively run a build step, and ensure its dependencies are up-to-date.
@@ -38,10 +40,30 @@ export default async function run(rules: MatchResult[]): Promise<boolean> {
             .collect()
             .then(dependencies => !dependencies.includes(false));
 
-        if (isUpToDate)
+        if (isUpToDate) // TODO: Run rule
             log.info(`Target ${chalk.yellow(rule.file)} is up-to-date`);
-        else
-            log.verbose(`Target ${chalk.yellow(rule.file)} is out-of-date`);
+
+        if (!isUpToDate || config.get().force || rule.rule.phony) {
+            log.verbose(`Running target ${chalk.yellow(rule.file)}`);
+
+            const wildcards = _.chain(rule.wildcards)
+                .map((i, a) => [`wildcard-${a}`, i])
+                .fromPairs()
+                .value()
+
+            const env: Record<string, string> = _.chain({})
+                .merge(process.env)
+                .merge(rule.rule.env)
+                .pickBy(i => i)
+                .merge(wildcards)
+                .value()
+
+            const didSucceed = await rule.rule.run?.(rule.file, env);
+
+            if (['debug', 'verbose'].includes(config.get().logLevel))
+                if (!didSucceed)
+                    log.err(`Failed to build ${chalk.yellow(rule.file)}`);
+        }
     }
 
     return didRun;
