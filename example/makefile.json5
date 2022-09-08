@@ -9,7 +9,7 @@
             run: "pnpm exec esbuild src/index.ts --outdir=build --bundle --sourcemap --splitting --platform=node --format=esm"
         },
         "./build/run.js": {
-            dependencie: [
+            dependencies: [
                 './run.js'
             ],
             run: "ln run.js build/run.js"
