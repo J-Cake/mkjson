@@ -1,6 +1,7 @@
-import {promises as fs} from 'node:fs';
 import os from 'node:os';
 import log from "./log.js";
+
+import * as plugin from './plugin.js';
 
 /**
  * Tidy up and resolve relative paths into absolute ones
@@ -41,7 +42,7 @@ export default async function* lsGlob(globString: string): AsyncGenerator<{ file
         const matcher = glob(globString);
 
         const path = split.slice(0, split.findIndex(i => i.includes('*') || i.includes('+'))).join('/');
-        for await (const i of lsDir(path)) {
+        for await (const i of plugin.API.lsDir(path)) {
             matcher.lastIndex = 0;
             const [file, ...wildcards] = matcher.exec(i) ?? [];
 
@@ -51,22 +52,4 @@ export default async function* lsGlob(globString: string): AsyncGenerator<{ file
     } catch (err) {
         log.err(err);
     }
-}
-
-/**
- * List the contents of a directory recursively
- * @param root
- */
-export async function* lsDir(root: string): AsyncGenerator<string> {
-    const path = toAbs(root);
-    if (await fs.stat(path).then(stat => stat.isDirectory())) {
-        const dirContents = await fs.readdir(path);
-        for (const i of dirContents) {
-            const dir = `${path}/${i}`;
-            yield dir;
-
-            if (await fs.stat(dir).then(stat => stat.isDirectory()))
-                yield* lsDir(dir);
-        }
-    } else yield path;
 }

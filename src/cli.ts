@@ -31,7 +31,7 @@ export default async function main(argv: string[], pkg: typeof import('../packag
 
     for (const {current: i, skip: next} of iterSync.peekable(argv))
         if (i == '--makefile' || i == '-m')
-            await mkjson.Plugin.loadMakefile(next());
+            await mkjson.API.loadMakefile(next());
         else if (i == '--log-level')
             mkjson.config.setState({logLevel: logLevel(next())});
         else if (i == '--force' || i == '-B' || i == '-f')
@@ -52,9 +52,9 @@ export default async function main(argv: string[], pkg: typeof import('../packag
     mkjson.log.debug(`Loading Makefile`)
 
     if (mkjson.config.get().makefilePath.length <= 0)
-        await mkjson.Plugin.loadMakefile('makefile.json')
-            .catch(() => mkjson.Plugin.loadMakefile('makefile.json5'))
-            .catch(() => mkjson.Plugin.loadMakefile('makefile.js'))
+        await mkjson.API.loadMakefile('makefile.json')
+            .catch(() => mkjson.API.loadMakefile('makefile.json5'))
+            .catch(() => mkjson.API.loadMakefile('makefile.js'))
             .catch(() => mkjson.log.err(`No makefile was found.`));
 
     const artifacts = mkjson.config.get().artifacts;

@@ -12,9 +12,10 @@ export type Plugin = Partial<{
      * @param hint Where the makefile is to be loaded from
      */
     loadMakefile(hint: string): Promise<Nullable<TargetList>>,
-
+    parseGlob(glob: string): (value: string) => boolean,
 }>
 
+export const schemes: Map<string, Partial<SchemeHandler>> = new Map();
 export const plugins = new StateManager<Record<string, Plugin>>({});
 
 /**
@@ -40,30 +41,26 @@ export async function loadPlugin(source: string): Promise<Plugin> {
     return plugin;
 }
 
-/**
- * Uses loaded plugins to find and load makefiles from a user-provided hint
- * @param hint A string which indicates where to locate or how to load a particular makefile
- */
-export async function loadMakefile(hint: string): Promise<void> {
-    const loaded = Object.entries(plugins.get());
 
-    log.verbose(`Loading ${hint}`);
+export interface SchemeHandler {
+    getMTime(file: string): Promise<Date | number>,
 
-    for (const [a, i] of loaded) {
-        log.debug(`Attempting loader: ${chalk.yellow(a)}`);
-        const makefile = await i.loadMakefile?.(hint)
-            .catch(err => (log.debug(err), null));
+    getSize(file: string): Promise<number>,
 
-        if (makefile) {
-            config.setState(prev => ({makefilePath: [...prev.makefilePath, hint]}));
-
-            return void targets.setState(prev => ({
-                ...prev,
-                ...makefile
-            }));
-        } else
-            log.debug(`Loader returned nothing`);
-    }
-
-    throw `No makefile found for ${chalk.yellow(hint)}`;
+    lsDir(dir: string): AsyncIterable<string>
 }
+
+/**
+ * Register a file scheme. This is useful if mkjson is supposed to target files outside a typical filesystem, such as HTTP or SFTP
+ * @param scheme The scheme identifier - must be unique, and match /^[a-zA-Z][a-zA-Z0-9]*$/
+ * @param handlers {SchemeHandler}
+ */
+export function registerScheme(scheme: string, handlers: Partial<SchemeHandler>) {
+    if (schemes.has(scheme))
+        throw `Scheme name is already in use`;
+
+    return schemes.set(scheme, handlers)
+        .get(scheme);
+}
+
+export * as API from './plugin-api.js';

@@ -1,8 +1,11 @@
 export {config} from './config.js';
 export * as Config from './config.js';
 
-export {loadMakefile} from './plugin.js';
+export {loadPlugin} from './plugin.js';
 export * as Plugin from './plugin.js';
+
+export {loadMakefile} from './plugin-api.js';
+export * as API from './plugin-api.js';
 
 export {TargetList, Rule} from './targetList.js';
 export * as Makefile from './targetList.js';

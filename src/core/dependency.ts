@@ -1,12 +1,12 @@
-import {promises as fs} from 'node:fs'
 import chalk from 'chalk';
 import _ from 'lodash';
+import {iter, Iter} from "@j-cake/jcake-utils/iter";
 
 import {getRule, MatchResult, Rule} from "./targetList.js";
 import {config} from "./config.js";
 import log from "./log.js";
-import {iter, Iter} from "@j-cake/jcake-utils/iter";
 import lsGlob, * as path from "./path.js";
+import * as plugin from './plugin.js';
 
 /**
  * Recursively run a build step, and ensure its dependencies are up-to-date.
@@ -114,9 +114,9 @@ export default async function run(...rules: MatchResult[]): Promise<boolean> {
                     if (!dependencies.some(j => i.file == j.file))
                         dependencies.push(i);
 
-                const fileMtime = await fs.stat(file).then(stat => stat.mtime).catch(_ => 0);
+                const fileMtime = await plugin.API.getMTime(file).catch(_ => 0);
                 let hasModifiedDependency = await Iter(dependencies)
-                    .map(async i => await fs.stat(i.file).then(stat => stat.mtime).catch(_ => Infinity))
+                    .map(async i => await plugin.API.getMTime(i.file).catch(_ => Infinity))
                     .await()
                     .filter(i => i > fileMtime)
                     .collect();

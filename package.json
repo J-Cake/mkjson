@@ -24,12 +24,13 @@
         "build:lib": "esbuild src/lib.ts --outdir=build --bundle --sourcemap --splitting --platform=node --format=esm --external:#core",
         "build:plugin/json": "esbuild src/plugins/json.ts --outdir=build --bundle --sourcemap --splitting --platform=node --format=esm --external:#core",
         "build:plugin/js": "esbuild src/plugins/js.ts --outdir=build --bundle --sourcemap --splitting --platform=node --format=esm --external:#core",
+        "build:plugin/fs": "esbuild src/plugins/fs.ts --outdir=build --bundle --sourcemap --splitting --platform=node --format=esm --external:#core",
         "build:meta": "cat package.json | jq -r '. * .deploy * {deploy:null} | with_entries(select(.value |. != null))' > build/package.json > build/package.json && ln -f README.md run.js build",
         "build": "cat package.json | jq -r '.scripts | keys_unsorted[] | select(. | startswith(\"build:\"))' | xargs -d \\\\n -I {} $npm_execpath run {}",
         "clean": "cat .gitignore | xargs -d \\\\n -I {} sh -c 'rm -rf {}'",
         "test": "find test -name \\*.js | xargs -I {} bash -c 'node {}; echo [{}] exited with code $?'"
     },
-    "plugins": ["./json.js", "./js.js"],
+    "plugins": ["./json.js", "./js.js", "./fs.js"],
     "dependencies": {
         "@j-cake/jcake-utils": "latest",
         "lodash": "latest",
