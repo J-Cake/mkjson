@@ -2,7 +2,7 @@ import {promises as fs} from 'node:fs';
 import chalk from "chalk";
 import {iter} from '@j-cake/jcake-utils/iter';
 
-import {log, TargetList} from "#core";
+import {log, TargetList, Plugin} from "#core";
 import * as shell from '../shell.js';
 
 export type JSONRule = Partial<{
@@ -162,9 +162,7 @@ export async function loadMakefile(hint: string): Promise<TargetList> {
 
     const {default: json} = await import('json5').catch(err => ({default: JSON}));
 
-    const file = await fs.open(hint, 'r');
-    const chunks = await iter.collect(file.createReadStream() as AsyncIterable<Buffer>);
-    const buffer = Buffer.concat(chunks).toString('utf8');
+    const buffer = await Plugin.API.fetch(hint, 'utf8');
     const makefile = json.parse(buffer);
 
     if (isMakefile(makefile))

@@ -25,6 +25,8 @@ Artifacts:
 export default async function main(argv: string[], pkg: typeof import('../package.json')) {
     const logLevel = Format.oneOf(['err', 'info', 'verbose', 'debug'] as const, false);
 
+    process.title = 'mkjson';
+
     mkjson.log.debug(`Loading plugins`);
     for (const i of pkg.plugins)
         await mkjson.Plugin.loadPlugin(i);

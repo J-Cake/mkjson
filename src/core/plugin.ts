@@ -1,10 +1,9 @@
 import {promises as fs} from 'node:fs';
 import StateManager from "@j-cake/jcake-utils/state";
 
-import {TargetList, targets} from "./targetList.js";
+import {TargetList} from "./targetList.js";
 import log from "./log.js";
 import chalk from "chalk";
-import {config} from "./config.js";
 
 export type Plugin = Partial<{
     /**
@@ -12,11 +11,16 @@ export type Plugin = Partial<{
      * @param hint Where the makefile is to be loaded from
      */
     loadMakefile(hint: string): Promise<Nullable<TargetList>>,
-    parseGlob(glob: string): (value: string) => boolean,
+    /**
+     * Creates a function which returns whether a string matches a globbing pattern
+     * @param glob The glob string understood by the returned function
+     */
+    createGlob(glob: string): Glob,
 }>
 
 export const schemes: Map<string, Partial<SchemeHandler>> = new Map();
 export const plugins = new StateManager<Record<string, Plugin>>({});
+export let glob: Plugin['createGlob'];
 
 /**
  * Loads a plugin - Add any compatible functionality to a list of loaded sources
@@ -34,20 +38,30 @@ export async function loadPlugin(source: string): Promise<Plugin> {
 
     const plugin = await import(fileDir);
 
-    plugins.setState({[fileDir]: plugin})
+    const createGlob = plugins.setState({[fileDir]: plugin})[fileDir].createGlob;
+    if (createGlob)
+        glob = createGlob;
 
     log.verbose(`Plugin successfully loaded`);
 
     return plugin;
 }
 
+export interface Glob {
+    matches(str: string): boolean,
+    exec(str: string): { file: string, wildcards: string[], raw: string }
+}
 
 export interface SchemeHandler {
     getMTime(file: string): Promise<Date | number>,
 
     getSize(file: string): Promise<number>,
 
-    lsDir(dir: string): AsyncIterable<string>
+    lsDir(dir: string): AsyncIterable<string>,
+
+    fetch(path: string): Promise<Buffer>,
+    fetch(path: string, encoding: 'utf8' | 'utf-8' | 'base64' | 'hex'): Promise<string>
+    fetch(path: string, encoding?: 'utf8' | 'utf-8' | 'base64' | 'hex'): Promise<Buffer | string>
 }
 
 /**
