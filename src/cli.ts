@@ -64,7 +64,7 @@ export default async function main(argv: string[], pkg: typeof import('../packag
         if (rules.length <= 0)
             throw log.err(`No rule found for ${chalk.blue(i)}`);
 
-        await mkjson.run(rules);
+        await mkjson.run(...rules);
     }
 
     return true;

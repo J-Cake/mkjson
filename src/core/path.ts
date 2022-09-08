@@ -1,5 +1,6 @@
 import {promises as fs} from 'node:fs';
 import os from 'node:os';
+import log from "./log.js";
 
 /**
  * Tidy up and resolve relative paths into absolute ones
@@ -39,13 +40,17 @@ export default async function* lsGlob(globString: string): AsyncGenerator<{ file
             .split('/');
         const matcher = glob(globString);
 
-        for await (const dir of lsDir(split.slice(0, split.findIndex(i => i.includes('*') || i.includes('+'))).join('/'))) {
-            const [file, ...wildcards] = matcher.exec(dir) ?? [];
+        const path = split.slice(0, split.findIndex(i => i.includes('*') || i.includes('+'))).join('/');
+        for await (const i of lsDir(path)) {
+            matcher.lastIndex = 0;
+            const [file, ...wildcards] = matcher.exec(i) ?? [];
 
             if (file)
                 yield {file, wildcards};
         }
-    } catch(err) {}
+    } catch (err) {
+        log.err(err);
+    }
 }
 
 /**
@@ -54,13 +59,14 @@ export default async function* lsGlob(globString: string): AsyncGenerator<{ file
  */
 export async function* lsDir(root: string): AsyncGenerator<string> {
     const path = toAbs(root);
-    if (await fs.stat(path).then(stat => stat.isDirectory()))
-        for (const i of await fs.readdir(path, {})) {
+    if (await fs.stat(path).then(stat => stat.isDirectory())) {
+        const dirContents = await fs.readdir(path);
+        for (const i of dirContents) {
             const dir = `${path}/${i}`;
             yield dir;
 
             if (await fs.stat(dir).then(stat => stat.isDirectory()))
                 yield* lsDir(dir);
         }
-    else yield path;
+    } else yield path;
 }
