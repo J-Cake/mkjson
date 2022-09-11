@@ -1,5 +1,4 @@
 import chalk from "chalk";
-import _ from 'lodash';
 
 import log from "./log.js";
 import {config} from "./config.js";
@@ -42,14 +41,14 @@ export async function loadMakefile(hint: string): Promise<void> {
  * @param path {string}
  * @returns {number} a UNIX timestamp (including milliseconds)
  */
-export async function getMTime(path: string): Promise<Date | number> {
+export function getMTime(path: string): Promise<Date | number> {
     const schemeName = path.match(/^[a-zA-Z][a-zA-Z0-9]*:(?=.*)/)?.[0] ?? 'file:';
     const scheme = plugins.schemes.get(schemeName);
 
     if (!scheme?.getMTime)
         throw `No scheme defined for ${schemeName}`;
 
-    return await scheme.getMTime(path);
+    return scheme.getMTime(path);
 }
 
 /**
@@ -57,14 +56,14 @@ export async function getMTime(path: string): Promise<Date | number> {
  * @param path {string}
  * @returns {number} The size of the resource in bytes
  */
-export async function getSize(path: string): Promise<number> {
+export function getSize(path: string): Promise<number> {
     const schemeName = path.match(/^[a-zA-Z][a-zA-Z0-9]*:(?=.*)/)?.[0] ?? 'file:';
     const scheme = plugins.schemes.get(schemeName);
 
     if (!scheme?.getSize)
         throw `No scheme defined for ${schemeName}`;
 
-    return await scheme.getSize(path);
+    return scheme.getSize(path);
 }
 
 /**
@@ -82,7 +81,8 @@ export function lsDir(path: string): AsyncIterable<string> {
     return scheme.lsDir(path);
 }
 
-export type Encoding =  'utf8' | 'utf-8' | 'base64' | 'hex';
+export type Encoding = 'utf8' | 'utf-8' | 'base64' | 'hex';
+
 /**
  * Fetch the contents of a file or resource
  * @param path {string}

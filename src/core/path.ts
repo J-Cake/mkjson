@@ -13,7 +13,8 @@ export const toAbs = (path: string): string => (path.startsWith('/') ? path : `.
     .replace(/^~\//g, os.homedir() + '/')
     .replaceAll(/[^\/]*\/\.\./g, '')
     .replaceAll('./', '')
-    .replaceAll(/\/+/g, '/')
+    .replaceAll(/\/+/g, '/'
+    )
 
 /**
  * List all files which match a particular glob pattern.

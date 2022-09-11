@@ -8,6 +8,15 @@ import log from "./log.js";
 import lsGlob, * as path from "./path.js";
 import * as plugin from './plugin.js';
 
+export const insertWildcards = function (dep: string, wildcards: string[]): string {
+    let result: string = dep;
+
+    for (const [a, i] of [dep, ...wildcards].reverse().entries())
+        result = result.replaceAll(`\\${a}`, i);
+
+    return decodeURIComponent(result);
+}
+
 /**
  * Recursively run a build step, and ensure its dependencies are up-to-date.
  * @param rules a list of rules to run
@@ -18,9 +27,13 @@ export default async function run(...rules: MatchResult[]): Promise<boolean> {
     const force = config.get().force;
     for (const {file, wildcards, rule} of rules) {
         log.verbose(`Building ${chalk.blue(file)}`);
+        log.debug("File:", file, "Wildcards:", wildcards);
         let isUpToDate = true;
         if (rule?.dependencies)
-            for await (const dep of Iter(rule.dependencies).map(i => path.toAbs(i))) { // TODO: allow wildcards to be used in dependencies using \n syntax
+            for await (const dep of Iter(rule.dependencies)
+                .map(i => path.toAbs(i))
+                .map(i => insertWildcards(i, wildcards))) { // TODO: allow wildcards to be used in dependencies using \n syntax
+
                 const glob: { file: string, wildcards: string[], rule?: Rule }[] = [...await getRule(dep), ...await iter.collect(lsGlob(dep))]
 
                 const dependencies: { file: string, wildcards: string[], rule?: Rule }[] = [];
@@ -35,6 +48,8 @@ export default async function run(...rules: MatchResult[]): Promise<boolean> {
                     .filter(i => i > fileMtime)
                     .collect();
 
+                // TODO: Order-only dependencies
+
                 if (hasModifiedDependency.length > 0) {
                     log.debug(`Dependency ${chalk.blue(dep)} is out-of-date`);
                     isUpToDate = false;
@@ -48,7 +63,7 @@ export default async function run(...rules: MatchResult[]): Promise<boolean> {
                 if (!await rule.run(file, _.chain({})
                     .merge(process.env as Record<string, string>)
                     .merge(rule.env)
-                    .merge(_.chain(wildcards)
+                    .merge(_.chain([file, ...wildcards])
                         .map((i, a) => [`target_${a}`, i] as [string, string])
                         .fromPairs()
                         .value())
@@ -58,7 +73,7 @@ export default async function run(...rules: MatchResult[]): Promise<boolean> {
                     log.verbose(`Run step for ${chalk.yellow(file)} succeeded`);
             else
                 log.debug(`Rule for ${chalk.yellow(file)} did not specify a run step.`);
-            else log.info(`Target ${chalk.yellow(file)} is up-to-date`);
+        else log.info(`Target ${chalk.yellow(file)} is up-to-date`);
     }
 
     return didRun;
