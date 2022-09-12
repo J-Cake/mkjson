@@ -8,15 +8,6 @@ import log from "./log.js";
 import lsGlob, * as path from "./path.js";
 import * as plugin from './plugin.js';
 
-export const insertWildcards = function (dep: string, wildcards: string[]): string {
-    let result: string = dep;
-
-    for (const [a, i] of [dep, ...wildcards].reverse().entries())
-        result = result.replaceAll(`\\${a}`, i);
-
-    return decodeURIComponent(result);
-}
-
 /**
  * Recursively run a build step, and ensure its dependencies are up-to-date.
  * @param rules a list of rules to run
@@ -32,7 +23,7 @@ export default async function run(...rules: MatchResult[]): Promise<boolean> {
         if (rule?.dependencies)
             for await (const dep of Iter(rule.dependencies)
                 .map(i => path.toAbs(i))
-                .map(i => insertWildcards(i, wildcards))) { // TODO: allow wildcards to be used in dependencies using \n syntax
+                .map(i => path.insertWildcards(i, wildcards))) { // TODO: allow wildcards to be used in dependencies using \n syntax
 
                 const glob: { file: string, wildcards: string[], rule?: Rule }[] = [...await getRule(dep), ...await iter.collect(lsGlob(dep))]
 
@@ -49,6 +40,8 @@ export default async function run(...rules: MatchResult[]): Promise<boolean> {
                     .collect();
 
                 // TODO: Order-only dependencies
+
+                log.debug("Dep", dep);
 
                 if (hasModifiedDependency.length > 0) {
                     log.debug(`Dependency ${chalk.blue(dep)} is out-of-date`);

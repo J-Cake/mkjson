@@ -2,7 +2,7 @@
     "name": "@j-cake/mkjson",
     "description": "The make-like build tool that lives in your package.json.",
     "type": "module",
-    "version": "v1.3.3",
+    "version": "v1.4.0",
     "bin": "build/run.js",
     "main": "build/lib.js",
     "keywords": [
@@ -27,7 +27,7 @@
         "build:plugin/glob": "esbuild src/plugins/glob.ts --outdir=build --bundle --sourcemap --splitting --platform=node --format=esm --external:#core",
         "build:plugin/fs": "esbuild src/plugins/fs.ts --outdir=build --bundle --sourcemap --splitting --platform=node --format=esm --external:#core",
         "build:plugin/http": "esbuild src/plugins/http.ts --outdir=build --bundle --sourcemap --splitting --platform=node --format=esm --external:#core",
-        "build:meta": "cat package.json | jq -r '. * .deploy * {deploy:null} | with_entries(select(.value |. != null))' > build/package.json > build/package.json && ln -f README.md run.js build",
+        "build:meta": "cat package.json | jq -r '. * .deploy * {deploy:null} | with_entries(select(.value |. != null))' > build/package.json && ln -f DOC.md run.js build && ln -f build/lib/src/lib.d.ts build/index.d.ts",
         "build": "cat package.json | jq -r '.scripts | keys_unsorted[] | select(. | startswith(\"build:\"))' | xargs -d \\\\n -I {} $npm_execpath run {}",
         "clean": "cat .gitignore | xargs -d \\\\n -I {} sh -c 'rm -rf {}'",
         "test": "find test -name \\*.js | xargs -I {} bash -c 'node {}; echo [{}] exited with code $?'"
@@ -51,6 +51,7 @@
         "#core": "src/index.ts",
         "#cli": "./build/cli.js"
     },
+    "types": "build/lib.d.ts",
 
     "deploy": {
         "targets": null,
@@ -61,6 +62,7 @@
         "optionalDependencie": null,
         "main": "./lib.js",
         "bin": "./run.js",
+        "types": "./index.d.ts",
 
         "imports": {
             "#core": "./index.js",

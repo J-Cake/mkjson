@@ -1,20 +1,20 @@
 import os from 'node:os';
-import log from "./log.js";
+import {iterSync as iter} from '@j-cake/jcake-utils/iter';
 
+import log from "./log.js";
 import * as plugin from './plugin.js';
 
 /**
  * Tidy up and resolve relative paths into absolute ones
  * @param path
  */
-export const toAbs = (path: string): string => (path.startsWith('/') ? path : `./${path}`)
+export const toAbs = (path: string): string => (path.startsWith('/') ? path : (`./${path}`
     .replace(/^\.\.\//g, process.cwd() + '/../')
     .replace(/^\.\//g, process.cwd() + '/')
-    .replace(/^~\//g, os.homedir() + '/')
+    .replace(/^~\//g, os.homedir() + '/')))
     .replaceAll(/[^\/]*\/\.\./g, '')
     .replaceAll('./', '')
-    .replaceAll(/\/+/g, '/'
-    )
+    .replaceAll(/\/+/g, '/');
 
 /**
  * List all files which match a particular glob pattern.
@@ -43,4 +43,19 @@ export default async function* lsGlob(globString: string): AsyncGenerator<Return
     } catch (err) {
         log.err(err);
     }
+}
+
+/**
+ * Replace all wildcard aliases with wildcard values.
+ * @param dep
+ * @param wildcards
+ */
+export const insertWildcards = function (dep: string, wildcards: string[]): string {
+    let result: string = dep;
+
+    for (const [a, i] of iter.collect([dep, ...wildcards].entries()).reverse())
+        result = result.replaceAll(`\\${a}`, i);
+
+    console.log("wildcards: insertWildcards", wildcards);
+    return decodeURIComponent(result);
 }

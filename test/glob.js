@@ -1,20 +1,18 @@
-import rl from 'node:readline/promises';
+import {promises as rl} from 'node:readline';
 
-import {Iter} from "@j-cake/jcake-utils/iter";
-import glob, * as path from '../build/ts/src/core/path.js';
+import {core} from 'mkjson';
 
-console.log(await Iter([])
-    .interleave(...[
-        glob('/home/jcake/Code/Personal/mkjson/test'),
-        glob('/home/jcake/Code/Personal/mkjson/src'),
-        glob('/home/jcake/Code/Personal/mkjson/example/package.json'),
-    ])
-    .filter(i => !!i)
-    .map(i => i.file)
-    .collect());
+await core.loadPlugin('../build/fs.js');
+await core.loadPlugin('../build/glob.js');
 
+const glob = core.lsGlob;
+const wildcards = core.Path.insertWildcards;
 const lines = rl.createInterface(process.stdin, process.stdout)
 
+const prevWildcards = [];
+
 while (true)
-    for await (const file of glob(await lines.question('$ ').then(res => path.toAbs(res))))
-        console.log(file.file);
+    for await (const file of glob(await lines.question('$ ').then(res => wildcards(core.Path.toAbs(res), prevWildcards)))) {
+        prevWildcards.splice(0, prevWildcards.length, ...file.wildcards);
+        console.log(file.file, prevWildcards);
+    }

@@ -17,7 +17,7 @@ export function target(target: string | string[], handler?: mkjson.Makefile.Rule
 export function target(target: string | string[], rule?: Partial<mkjson.Makefile.Rule> | mkjson.Makefile.Rule['run'], options?: Partial<Omit<mkjson.Makefile.Rule, 'run'>>) {
     const handler: Partial<mkjson.Makefile.Rule> = {
         ...options ?? {},
-        ...(typeof rule == 'function' ? { run: rule } : {})
+        ...(typeof rule == 'function' ? {run: rule} : {})
     };
 
     if (target?.length > 0)
@@ -42,6 +42,7 @@ export function target(target: string | string[], rule?: Partial<mkjson.Makefile
 }
 
 export default target;
+export * as core from '#core';
 
 export {shell} from './shell.js';
 export * as Shell from './shell.js'

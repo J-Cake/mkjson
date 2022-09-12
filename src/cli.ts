@@ -6,13 +6,12 @@ import {iterSync} from '@j-cake/jcake-utils/iter';
 import * as mkjson from "#core";
 import log from "./core/log.js";
 
-export const help = (pkg: typeof import('../package.json')) => `Usage: ${chalk.whiteBright(pkg.name)} [options] [artifacts]
+export const help = (pkg: typeof import('../package.json')) => `Usage: ${chalk.whiteBright(pkg.name)} [options] [...artifacts]
 
 Options:
     --makefile, -m ${chalk.yellow('<path>')}   Path to the makefile to use
     --log-level ${chalk.yellow('<level>')}     Set the log level (err, info, verbose, debug)
-    --force                 Update dependencies even if they haven't changed
-    --force-absolute        Update dependencies even if they haven't changed
+    --force, -B              Update dependencies even if they haven't changed
     --synchronous           Run commands synchronously
     --no-scripts            Don't run scripts
     --version, -v           Print the version
