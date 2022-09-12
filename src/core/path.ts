@@ -56,6 +56,5 @@ export const insertWildcards = function (dep: string, wildcards: string[]): stri
     for (const [a, i] of iter.collect([dep, ...wildcards].entries()).reverse())
         result = result.replaceAll(`\\${a}`, i);
 
-    console.log("wildcards: insertWildcards", wildcards);
     return decodeURIComponent(result);
 }

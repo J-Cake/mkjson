@@ -8,16 +8,9 @@ export function createGlob(glob: string): Plugin.Glob {
         .replaceAll('*', '(.*)')
         .replaceAll('+', '([^\/]*)')) + '$', 'g');
 
-    const exe = str => _.chain((regExp.lastIndex = -1, regExp.exec(str) ?? []))
-        .reduce((a, i, b) => b == 0 ? [i, a[1], str] as typeof a : [a[0], [...a[1], i], str] as typeof a, ['', [], ''] as [string, string[], string])
-        .zip(['file', 'wildcards', 'raw'])
-        .map(i => [i[1], i[0]])
-        .fromPairs()
-        .value() as { file: string, wildcards: string[], raw: string };
-
     return {
         exec: str => _.chain((regExp.lastIndex = -1, regExp.exec(str) ?? []))
-            .reduce((a, i, b) => b == 0 ? [i ?? '', a[1], str] as typeof a : [a[0] ?? '', [...a[1], i], str] as typeof a, ['', [], ''] as [string, string[], string])
+            .reduce((a, i, b) => b == 0 ? [i ?? '', a[1], glob] as typeof a : [a[0] ?? '', [...a[1], i], glob] as typeof a, ['', [], ''] as [string, string[], string])
             .zip(['file', 'wildcards', 'raw'])
             .map(i => [i[1], i[0]])
             .fromPairs()
