@@ -51,10 +51,10 @@ export default async function main(argv: string[], pkg: typeof import('../packag
     mkjson.log.debug(`Loading Makefile`)
 
     if (mkjson.config.get().makefilePath.length <= 0)
-        await mkjson.API.loadMakefile('package.json') // gotta get the slogan right!
-            .catch(() => mkjson.API.loadMakefile('makefile.json'))
+        await mkjson.API.loadMakefile('makefile.json')
             .catch(() => mkjson.API.loadMakefile('makefile.json5'))
             .catch(() => mkjson.API.loadMakefile('makefile.js'))
+            .catch(() => mkjson.API.loadMakefile('package.json')) // gotta get the slogan right!
             .catch(() => mkjson.log.err(`No makefile was found.`));
 
     const artifacts = mkjson.config.get().artifacts;
