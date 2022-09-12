@@ -37,8 +37,6 @@ export default async function main(argv: string[], pkg: typeof import('../packag
             mkjson.config.setState({logLevel: logLevel(next())});
         else if (i == '--force' || i == '-B' || i == '-f')
             mkjson.config.setState({force: true});
-        else if (i == '--all')
-            mkjson.config.setState({all: true});
         else if (i == '--synchronous' || i == '-S')
             mkjson.config.setState({synchronous: true});
         else if (i == '--no-scripts')

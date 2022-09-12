@@ -1,9 +1,11 @@
+import chalk from "chalk";
 import StateManager from "@j-cake/jcake-utils/state";
 import {Iter} from '@j-cake/jcake-utils/iter';
 
 import {config} from "./config.js";
 import lsGlob, {toAbs} from "./path.js"
 import * as plugins from "./plugin.js";
+import log from "./log.js";
 
 export const targets: StateManager<TargetList> = new StateManager({});
 
@@ -38,6 +40,8 @@ export async function getRule(artifactHint: string): Promise<MatchResult[]> {
             .map(i => i.exec(artifact))
             .filter(i => i.file.length > 0);
 
+        log.debug(`Fetching rules for ${chalk.yellow(artifact)}`);
+
         const matchesArtifact = await Iter(lsGlob(artifact))
             .map(artifact => matchers
                 .map(i => i.exec(artifact.file))
@@ -45,19 +49,12 @@ export async function getRule(artifactHint: string): Promise<MatchResult[]> {
             .flat()
             .collect();
 
+        log.debug(`Matched values`, matchesArtifact);
+
         const allTargets = [...matchesTarget, ...matchesArtifact];
 
         if (allTargets.length > 0)
-            if (config.get().all)
-                return allTargets.map(i => ({
-                    ...i,
-                    rule
-                }));
-            else
-                return [{
-                    ...allTargets[0],
-                    rule,
-                }]
+            return allTargets.map(i => ({ ...i, rule }));
     }
 
     return [];
