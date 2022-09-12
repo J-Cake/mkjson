@@ -5,7 +5,9 @@ import chalk from 'chalk';
 
 import main from '#cli';
 
-await main(process.argv.slice(2), await fs.readFile('./package.json', 'utf8').then(JSON.parse))
-    .catch(err => err && (err instanceof Error ?
-        console.error(chalk.grey(`[${chalk.red('err')}]`), err.message) :
-        console.error(chalk.grey(`[${chalk.red('err')}]`), err), -1));
+const fileDir = `${import.meta.url.match(/^file:\/\/(\/.*)\/[^\/]*$/)?.[1]}/package.json`;
+
+const success = await main(process.argv.slice(2), await fs.readFile(fileDir, 'utf8').then(JSON.parse))
+    .catch(err => (err && console.error(chalk.grey(`[${chalk.red('err')}]`), err), false));
+
+process.exit(success ? 0 : 1);

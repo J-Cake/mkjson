@@ -1,3 +1,7 @@
-import target, {shell} from 'mkjson';
+import target from 'mkjson';
 
-target("build/run.js", shell(`echo hi`));
+target("build/*.js", async function(target, env) {
+    console.log(target, env);
+
+    return false; // fail
+})

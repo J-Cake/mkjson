@@ -1,0 +1,80 @@
+import {promises as fs} from 'node:fs';
+import StateManager from "@j-cake/jcake-utils/state";
+
+import {TargetList} from "./targetList.js";
+import log from "./log.js";
+import chalk from "chalk";
+
+export type Plugin = Partial<{
+    /**
+     * Finds and loads a makefile from a (usually provided by CLI) hint used to locate it.
+     * @param hint Where the makefile is to be loaded from
+     */
+    loadMakefile(hint: string): Promise<Nullable<TargetList>>,
+    /**
+     * Creates a function which returns whether a string matches a globbing pattern
+     * @param glob The glob string understood by the returned function
+     */
+    createGlob(glob: string): Glob,
+}>
+
+export const schemes: Map<string, Partial<SchemeHandler>> = new Map();
+export const plugins = new StateManager<Record<string, Plugin>>({});
+export let glob: Plugin['createGlob'];
+
+/**
+ * Loads a plugin - Add any compatible functionality to a list of loaded sources
+ * @param source
+ */
+export async function loadPlugin(source: string): Promise<Plugin> {
+    const fileDir = `${import.meta.url.match(/^file:\/\/(\/.*)\/[^\/]*$/)?.[1]}/${source}`
+        .replaceAll('/./', '/')
+        .replaceAll(/\/[^\/]*\/\.\./g, '/');
+
+    if (!await fs.stat(fileDir).then(res => res.isFile() || res.isSymbolicLink()).catch(() => false))
+        throw log.err(`Invalid plugin format: Plugins must be real files`);
+
+    log.verbose(`Loading plugin: ${chalk.yellow(fileDir)}`);
+
+    const plugin = await import(fileDir);
+
+    const createGlob = plugins.setState({[fileDir]: plugin})[fileDir].createGlob;
+    if (createGlob)
+        glob = createGlob;
+
+    log.verbose(`Plugin successfully loaded`);
+
+    return plugin;
+}
+
+export interface Glob {
+    matches(str: string): boolean,
+    exec(str: string): { file: string, wildcards: string[], raw: string }
+}
+
+export interface SchemeHandler {
+    getMTime(file: string): Promise<Date | number>,
+
+    getSize(file: string): Promise<number>,
+
+    lsDir(dir: string): AsyncIterable<string>,
+
+    fetch(path: string): Promise<Buffer>,
+    fetch(path: string, encoding: 'utf8' | 'utf-8' | 'base64' | 'hex'): Promise<string>
+    fetch(path: string, encoding?: 'utf8' | 'utf-8' | 'base64' | 'hex'): Promise<Buffer | string>
+}
+
+/**
+ * Register a file scheme. This is useful if mkjson is supposed to target files outside a typical filesystem, such as HTTP or SFTP
+ * @param scheme The scheme identifier - must be unique, and match /^[a-zA-Z][a-zA-Z0-9]*$/
+ * @param handlers {SchemeHandler}
+ */
+export function registerScheme(scheme: string, handlers: Partial<SchemeHandler>) {
+    if (schemes.has(scheme))
+        throw `Scheme name is already in use`;
+
+    return schemes.set(scheme, handlers)
+        .get(scheme);
+}
+
+export * as API from './plugin-api.js';

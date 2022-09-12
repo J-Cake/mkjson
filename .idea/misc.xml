@@ -3,9 +3,13 @@
   <component name="CidrRootsConfiguration">
     <sourceRoots>
       <file path="$PROJECT_DIR$/src" />
+      <file path="$PROJECT_DIR$/test" />
     </sourceRoots>
     <excludeRoots>
+      <file path="$PROJECT_DIR$/.vscode" />
       <file path="$PROJECT_DIR$/build" />
+      <file path="$PROJECT_DIR$/example/build" />
+      <file path="$PROJECT_DIR$/src/.core-old" />
     </excludeRoots>
   </component>
   <component name="ExternalStorageConfigurationManager" enabled="true" />

@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="run.js" type="NodeJSConfigurationType" application-parameters="--makefile makefile.js --force" nameIsGenerated="true" node-parameters="--enable-source-maps=true" path-to-js-file="$PROJECT_DIR$/run.js" working-dir="$PROJECT_DIR$/test">
+  <configuration default="false" name="Run" type="NodeJSConfigurationType" application-parameters="--log-level debug -m makefile.json5 build/index.js" node-parameters="--enable-source-maps=true" path-to-js-file="../build/run.js" working-dir="$PROJECT_DIR$/example">
     <method v="2">
       <option name="TypeScript.Before.Run" enabled="true" FAIL_ON_ERROR="true" CONFIG_PATH="$PROJECT_DIR$/tsconfig.json" />
       <option name="NpmBeforeRunTask" enabled="true">

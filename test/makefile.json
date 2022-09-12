@@ -15,13 +15,18 @@
             "dependencies": ["match.js"],
             "run": "touch match.js"
         },
-        "(t1);(t2)": {
+        "t1;t2": {
             "run": "echo $target_0"
         },
         "test": {
             "dependencies": ["t2"],
             "phony": true,
             "echo": "$npm"
+        },
+
+        "./build/*.js": {
+            "dependencies": ["./\\1.ts"],
+            "run": "touch $target_0 && echo $target_0"
         },
 
         "inherit": {

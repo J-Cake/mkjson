@@ -1,109 +1,73 @@
-/**
- * Checks and updates dependencies as necessary
- */
-import { promises as fs } from 'node:fs';
 import chalk from 'chalk';
 import _ from 'lodash';
-import {IterSync} from '@j-cake/jcake-utils/iter';
+import {iter, Iter} from "@j-cake/jcake-utils/iter";
 
-import { config, Force } from './index.js';
-import { Rule as Rule } from "./makefile.js";
-import { run, matches, toAbs } from './run.js';
-import { log } from './log.js';
-import { orderOnly } from './orderonly.js';
-
-/**
- * 
- * @param path The path whose contents are to be listed
- */
-export async function* lsdir(path: string): AsyncGenerator<string> {
-    for (const file of await fs.readdir(path))
-        if (await fs.stat(`${path}/${file}`).then(stat => stat.isDirectory()))
-            yield* lsdir(`${path}/${file}`);
-        else yield `${path}/${file}`;
-}
+import {getRule, MatchResult, Rule} from "./targetList.js";
+import {config} from "./config.js";
+import log from "./log.js";
+import lsGlob, * as path from "./path.js";
+import * as plugin from './plugin.js';
 
 /**
- * Compare the modification time of a file to a target time
- * @param selector The selector is a string that possibly contains wildcards
- * @param target Target is the file on disk / or makefile target
- * @returns whether the selector returned a value which was more recent than the target
+ * Recursively run a build step, and ensure its dependencies are up-to-date.
+ * @param rules a list of rules to run
+ * @returns whether the rule build step was run
  */
-export async function isOlder(selector: string, target: number): Promise<boolean> {
-    const pathSegments = selector.split('/');
-    const wildcard = pathSegments.findIndex(i => i.includes('*') || i.includes('+'));
+export default async function run(...rules: MatchResult[]): Promise<boolean> {
+    let didRun = false;
+    const force = config.get().force;
+    for (const {file, wildcards, rule} of rules) {
+        log.verbose(`Building ${chalk.blue(file)}`);
+        log.debug("File:", file, "Wildcards:", wildcards);
+        let isUpToDate = true;
+        if (rule?.dependencies)
+            for await (const dep of Iter(rule.dependencies)
+                .map(i => path.toAbs(i))
+                .map(i => path.insertWildcards(i, wildcards))) { // TODO: allow wildcards to be used in dependencies using \n syntax
 
-    if (wildcard <= 0) {
-        if (await fs.stat(selector).then(stat => stat.mtime.getTime()).catch(() => 0) > target) {
-            log.debug('isOlder', { selector: chalk.yellow(selector) });
-            return true;
-        }
-    } else for await (const i of lsdir(pathSegments.slice(0, wildcard).join('/')))
-        if (await fs.stat(i).then(stat => stat.mtime.getTime()).catch(() => 0) > target) {
-            log.debug('isOlder', { selector: chalk.yellow(i) });
-            return true;
-        }
+                const glob: { file: string, wildcards: string[], rule?: Rule }[] = [...await getRule(dep), ...await iter.collect(lsGlob(dep))]
 
+                const dependencies: { file: string, wildcards: string[], rule?: Rule }[] = [];
+                for (const i of glob) // remove duplicates
+                    if (!dependencies.some(j => i.file == j.file))
+                        dependencies.push(i);
 
-    return false;
-}
+                const fileMtime = await plugin.API.getMTime(file).catch(_ => 0);
+                let hasModifiedDependency = await Iter(dependencies)
+                    .map(async i => await plugin.API.getMTime(i.file).catch(_ => Infinity))
+                    .await()
+                    .filter(i => i > fileMtime)
+                    .collect();
 
+                // TODO: Order-only dependencies
 
-export default updateDependencies;
-/**
- * 
- * @param target The name of the artifact (filename) being produced
- * @param rule Instructions on how to build the artifact, as well as its dependencies
- * @returns Whether the artifact was updated
- */
-export async function updateDependencies(target: string, rule: Rule): Promise<boolean> {
-    const { makefile, makefilePath, force } = config.get();
-    const origin = makefilePath.split('/').slice(0, -1).join('/');
-    const mtime = await fs.stat(toAbs(target, origin))
-        .then(stat => stat.mtime.getTime())
-        .catch(() => 0);
+                log.debug("Dep", dep);
 
-    log.debug(`dependencies:`, rule.dependencies);
-
-    let didUpdate: boolean = false;
-
-    for (const i of rule.dependencies ?? []) {
-        log.verbose(`Checking ${chalk.green(i)}`);
-
-        const absTarget = toAbs(i, origin);
-        const targets = Object.entries(makefile.targets);
-        const dependencies = IterSync(targets)
-            .filtermap(function ([target, rule]) {
-                const match = matches(target, absTarget, origin);
-                if (match)
-                    return {
-                        target,
-                        rule,
-                        targetNames: match
-                    };
-                else return null;
-            })
-            .collect();
-
-        log.debug(`Resolved dependency to ${chalk.green(absTarget)}.`);
-
-        if (dependencies.length > 0) { // the dependency exist in the makefile
-            for (const { target, rule, targetNames } of dependencies) {
-                log.debug(`Updating ${chalk.green(target)}`);
-
-                if (await updateDependencies(target, rule) || force == Force.Absolute)
-                    didUpdate = !void await run(rule, _.fromPairs(targetNames.map((i, a) => [`target_${a}`, i])));
-                else
-                    log.info(`Target ${chalk.yellow(target)} is up-to-date`);
+                if (hasModifiedDependency.length > 0) {
+                    log.debug(`Dependency ${chalk.blue(dep)} is out-of-date`);
+                    isUpToDate = false;
+                    await run(...dependencies.filter(i => i.rule) as MatchResult[]);
+                } else
+                    log.debug(`Dependency ${chalk.blue(dep)} is up-to-date`);
             }
-        } else if (await isOlder(absTarget, mtime))// the dependency does not exist in the makefile, so it must be a file
-            didUpdate = true;
+
+        if (!isUpToDate || rule.phony || force)
+            if ((didRun = true) && rule?.run)
+                if (!await rule.run(file, _.chain({})
+                    .merge(process.env as Record<string, string>)
+                    .merge(rule.env)
+                    .merge(_.chain([file, ...wildcards])
+                        .map((i, a) => [`target_${a}`, i] as [string, string])
+                        .fromPairs()
+                        .value())
+                    .value()))
+                    log.err(`Run step for ${chalk.yellow(file)} failed.`);
+                else
+                    log.verbose(`Run step for ${chalk.yellow(file)} succeeded`);
+            else
+                log.debug(`Rule for ${chalk.yellow(file)} did not specify a run step.`);
+        else log.info(`Target ${chalk.yellow(file)} is up-to-date`);
     }
 
-    log.debug(`${didUpdate ? 'Updated' : 'Unchanged'} ${target}`);
-    log.verbose(`Running Order-Only dependencies`);
-
-    await orderOnly(target, rule);
-
-    return didUpdate;
+    return didRun;
 }

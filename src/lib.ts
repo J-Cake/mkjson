@@ -1,64 +1,48 @@
 import _ from 'lodash';
-import type {Rule} from "#core";
-import {config, run} from '#core';
+import * as mkjson from '#core';
 
 /**
- * Represents the action to perform when a dependency is outdated.
- * If function:
- *  - Run function as normal
- * If string:
- * - Run string as command
- * - Recommended approach is the [shell](#shell) function
+ * Defines a mkjson target
+ * @param target The pattern defining which file or resource the rule applies to
+ * @param rule A mkjson rule
  */
-export declare type TargetHandler = string | string[] | (() => Promise<void>);
-
+export function target(target: string | string[], rule: Partial<mkjson.Makefile.Rule>);
 /**
- * Represents a rule configuration
- * @property dependencies - The dependencies of the rule
- * @property orderOnly - The order-only dependencies of the rule
- * @property phony - Whether the rule is a phony rule
- * @property cwd - The working directory of the rule
- * @property env - The environment variables of the rule
+ * Defines a mkjson target
+ * @param target The pattern defining which file or resource the rule applies to
+ * @param handler The function which runs when the pattern is matched
+ * @param options Additional options for the run step
  */
-export declare interface TargetOptions {
-    phony: boolean,
-    cwd: string,
-    env: Record<string, string>,
-    dependencies: string[],
-    orderOnly: string[]
-}
+export function target(target: string | string[], handler?: mkjson.Makefile.Rule['run'], options?: Partial<Omit<mkjson.Makefile.Rule, 'run'>>)
+export function target(target: string | string[], rule?: Partial<mkjson.Makefile.Rule> | mkjson.Makefile.Rule['run'], options?: Partial<Omit<mkjson.Makefile.Rule, 'run'>>) {
+    const handler: Partial<mkjson.Makefile.Rule> = {
+        ...options ?? {},
+        ...(typeof rule == 'function' ? {run: rule} : {})
+    };
 
-/**
- * Defines a Make target
- * @param specifier The target specifier: A string representing a file on disk, or a PHONY target.
- * @param handler The action to perform when the target is outdated.
- * @param options: {Partial<TargetOptions>} Target configurations
- */
-export default function target(specifier: string | string[], handler?: TargetHandler, options?: Partial<TargetOptions>) {
-    if (specifier?.length > 0)
-        config.setState(prev => ({
-            makefile: {
-                ...prev.makefile,
-                targets: {
-                    ...prev.makefile?.targets ?? {},
-                    ..._.fromPairs((Array.isArray(specifier) ? specifier : [specifier]).map(i => [i, {run: handler}]))
+    if (target?.length > 0)
+        mkjson.Makefile.targets.setState(prev => ({
+            ...prev,
+            ..._.fromPairs((Array.isArray(target) ? target : [target]).map(i => [i, {
+                ...handler,
+                async run(target: string, env: Record<string, string>) {
+                    try {
+                        if (!handler.run)
+                            return true;
+
+                        return await handler.run(target, env) !== false;
+                    } catch (err) {
+                        mkjson.log.err(err);
+                        return false;
+                    }
                 }
-            }
+            }]))
         }));
-    else throw `Target specifier must be a string or an array of strings`;
-};
-
-export declare interface ShellOptions {
-    isolate: boolean,
-    parallel: boolean,
-    ignoreFailure: boolean,
-    cwd: boolean,
-    env: boolean
+    else throw `Target target must be a string or an array of strings`;
 }
 
-/**
- * Runs a shell command
- * @param command The command/s to run
- * @param options The options to run the command with
- */
-export const shell = (command: string | string[], options?: Partial<ShellOptions>): TargetHandler => async (): Promise<void> => void await run(_.merge({run: command} as Rule, options ?? {}));
+export default target;
+export * as core from '#core';
+
+export {shell} from './shell.js';
+export * as Shell from './shell.js'

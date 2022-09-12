@@ -1,38 +1,20 @@
-import StateManager from '@j-cake/jcake-utils/state';
+export {config} from './config.js';
+export * as Config from './config.js';
 
-export {default as findMakefile, Makefile} from './makefile.js';
-export {default as buildArtifacts} from './run.js';
-export {default as initVars} from './vars.js';
+export {loadPlugin} from './plugin.js';
+export * as Plugin from './plugin.js';
 
-export {run} from "./run.js";
-export {log} from "./log.js";
+export {loadMakefile} from './plugin-api.js';
+export * as API from './plugin-api.js';
 
-export type {Rule} from './makefile.js';
+export {TargetList, Rule} from './targetList.js';
+export * as Makefile from './targetList.js';
 
-import type {Makefile} from './makefile.js';
+export {log} from './log.js';
+export * as Log from './log.js';
 
-export enum Force {
-    None,
-    Superficial,
-    Absolute
-}
+export {default as run} from './dependency.js';
+export * as Dependency from './dependency.js';
 
-export interface Args {
-    makefile: Makefile,
-    artifacts: string[],
-    force: Force,
-    synchronous: boolean,
-    logLevel: 'err' | 'info' | 'verbose' | 'debug',
-    makefilePath: string,
-    env: Record<string, string>,
-    blockScripts: boolean
-}
-
-export const config = new StateManager<Args>({
-    force: Force.None,
-    logLevel: 'info',
-    synchronous: false,
-    artifacts: [],
-    env: {},
-    blockScripts: false
-});
+export {default as lsGlob} from './path.js';
+export * as Path from './path.js';
