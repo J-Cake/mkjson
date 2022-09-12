@@ -37,6 +37,7 @@ export function shell(command: string | string[], options?: Partial<ShellOptions
             const procenv = {
                 ...process.env,
                 ...options?.env ?? {},
+                ...env,
                 mkjson: [
                     process.argv[0],
                     process.argv[1],

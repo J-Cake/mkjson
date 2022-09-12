@@ -57,7 +57,7 @@ export default async function run(...rules: MatchResult[]): Promise<boolean> {
                     .merge(process.env as Record<string, string>)
                     .merge(rule.env)
                     .merge(_.chain([file, ...wildcards])
-                        .map((i, a) => [`target_${a}`, i] as [string, string])
+                        .map((i, a) => [`target_${a}`, i] as [`target_${number}`, string])
                         .fromPairs()
                         .value())
                     .value()))
