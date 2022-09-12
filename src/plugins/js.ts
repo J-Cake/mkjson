@@ -5,7 +5,7 @@ export async function loadMakefile(hint: string): Promise<core.TargetList> {
     const path = core.Path.toAbs(hint);
 
     const makefile = await import(path)
-        .catch(err => (console.error(err), null)); // the rest is handled by ../lib.ts
+        .catch(err => (['debug'].includes(core.config.get().logLevel) && core.log.err(err), null)); // the rest is handled by ../lib.ts
 
     if (makefile)
         return core.Makefile.targets.get();

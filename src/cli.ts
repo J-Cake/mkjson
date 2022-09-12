@@ -11,7 +11,7 @@ export const help = (pkg: typeof import('../package.json')) => `Usage: ${chalk.w
 Options:
     --makefile, -m ${chalk.yellow('<path>')}   Path to the makefile to use
     --log-level ${chalk.yellow('<level>')}     Set the log level (err, info, verbose, debug)
-    --force, -B              Update dependencies even if they haven't changed
+    --force, -B             Update dependencies even if they haven't changed
     --synchronous           Run commands synchronously
     --no-scripts            Don't run scripts
     --version, -v           Print the version
