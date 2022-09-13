@@ -124,7 +124,9 @@ export async function buildMakefile(makefile: JSONMakefile): Promise<TargetList>
 
     if (makefile.env)
         for (const [a, i] of Object.entries(makefile.env))
-            env[a] = await shell.pipe(i, env);
+            env[a] = await shell
+                .pipe(i, env)
+                .collect();
 
     const targets: TargetList = {};
 
