@@ -1,8 +1,7 @@
 import {promises as fs} from 'node:fs';
 import chalk from "chalk";
-import {iter} from '@j-cake/jcake-utils/iter';
 
-import {log, TargetList, Plugin} from "#core";
+import {log, Plugin, TargetList} from "#core";
 import * as shell from '../shell.js';
 
 export type JSONRule = Partial<{
@@ -120,16 +119,28 @@ export function isMakefile(obj: any): obj is JSONMakefile {
  * @param makefile
  */
 export async function buildMakefile(makefile: JSONMakefile): Promise<TargetList> {
-    const env = {};
+    const Env = {};
 
     if (makefile.env)
         for (const [a, i] of Object.entries(makefile.env))
-            env[a] = await shell.pipe(i, env);
+            await shell
+                .pipe(i, Env)
+                .collect()
+                .then(res => Env[a] = res);
 
     const targets: TargetList = {};
 
     if (makefile.targets)
-        for (const [a, i] of Object.entries(makefile.targets))
+        for (const [a, i] of Object.entries(makefile.targets)) {
+            const env = {};
+
+            if (i.env)
+                for (const [a, j] of Object.entries(i.env))
+                    await shell
+                        .pipe(j, env)
+                        .collect()
+                        .then(res => env[a] = res);
+
             targets[a] = {
                 dependencies: i.dependencies ?? [],
                 orderOnly: i.orderOnly ?? [],
@@ -141,10 +152,11 @@ export async function buildMakefile(makefile: JSONMakefile): Promise<TargetList>
                 cwd: i.cwd ?? process.cwd(),
                 env: {
                     ...process.env,
+                    ...Env,
                     ...env,
-                    ...i.env ?? {}
                 },
             };
+        }
 
     return targets;
 }
