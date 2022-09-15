@@ -2,7 +2,6 @@ import chalk from "chalk";
 import StateManager from "@j-cake/jcake-utils/state";
 import {Iter} from '@j-cake/jcake-utils/iter';
 
-import {config} from "./config.js";
 import lsGlob, {toAbs} from "./path.js"
 import * as plugins from "./plugin.js";
 import log from "./log.js";
@@ -54,7 +53,7 @@ export async function getRule(artifactHint: string): Promise<MatchResult[]> {
         const allTargets = [...matchesTarget, ...matchesArtifact];
 
         if (allTargets.length > 0)
-            return allTargets.map(i => ({ ...i, rule }));
+            return allTargets.map(i => ({...i, rule}));
     }
 
     return [];
