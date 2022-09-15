@@ -1,0 +1,20 @@
+{
+    "name": "lsdir",
+    "main": "build/index.js",
+    "typings": "index.d.ts",
+    "scripts": {
+        "build:lsdir": "cargo-cp-artifact -nc build/index.node -- cargo build --message-format=json-render-diagnostics",
+        "build:meta": "cat package.json | jq -r '. * .deploy * {deploy:null} | with_entries(select(.value |. != null))' > build/package.json",
+        "build:lib": "mkdir -p build && ln -f index.d.ts index.js build",
+        "build": "cat package.json | jq -r '.scripts | keys_unsorted[] | select(. | startswith(\"build:\"))' | xargs -d \\\\n -I {} $npm_execpath run {}",
+        "clean": "rm -rf node_modules target build *lock* *pnpm*"
+    },
+    "dependencies": {
+        "cargo-cp-artifact": "latest"
+    },
+    "deploy": {
+        "main": "index.js",
+        "scripts": null,
+        "dependencies": null
+    }
+}
