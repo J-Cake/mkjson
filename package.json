@@ -26,6 +26,7 @@
         "build:plugin/js": "esbuild src/plugins/js.ts --outdir=build --bundle --sourcemap --splitting --platform=node --format=esm --external:#core",
         "build:plugin/glob": "esbuild src/plugins/glob.ts --outdir=build --bundle --sourcemap --splitting --platform=node --format=esm --external:#core",
         "build:plugin/fs": "esbuild src/plugins/fs.ts --outdir=build --bundle --sourcemap --splitting --platform=node --format=esm --external:#core",
+        "build:plugin/fs_lsdir": "ln -f src/plugins/lsdir/build/index.node build/lsdir.node",
         "build:plugin/http": "esbuild src/plugins/http.ts --outdir=build --bundle --sourcemap --splitting --platform=node --format=esm --external:#core",
         "build:meta": "cat package.json | jq -r '. * .deploy * {deploy:null} | with_entries(select(.value |. != null))' > build/package.json && ln -f DOC.md run.js build && ln -f build/lib/src/lib.d.ts build/index.d.ts",
         "build": "cat package.json | jq -r '.scripts | keys_unsorted[] | select(. | startswith(\"build:\"))' | xargs -d \\\\n -I {} $npm_execpath run {}",
@@ -35,6 +36,7 @@
     "plugins": ["./fs.js", "./http.js", "./json.js", "./js.js", "./glob.js"],
     "dependencies": {
         "@j-cake/jcake-utils": "latest",
+        "lsdir": "link:src/plugins/lsdir/build",
         "lodash": "latest",
         "chalk": "latest"
     },
@@ -48,6 +50,7 @@
         "json5": "latest"
     },
     "imports": {
+        "lsdir": "src/plugins/lsdir",
         "#core": "./build/index.js",
         "#cli": "./build/cli.js"
     },
@@ -57,7 +60,6 @@
         "targets": null,
         "deploy":  null,
         "scripts": null,
-        "dependencies": null,
         "devDependencies": null,
         "optionalDependencie": null,
         "main": "./lib.js",

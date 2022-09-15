@@ -11,6 +11,8 @@
       <file path="$PROJECT_DIR$/build" />
       <file path="$PROJECT_DIR$/example/build" />
       <file path="$PROJECT_DIR$/src/.core-old" />
+      <file path="$PROJECT_DIR$/src/plugins/lsdir/build" />
+      <file path="$PROJECT_DIR$/src/plugins/lsdir/target" />
     </excludeRoots>
   </component>
   <component name="ExternalStorageConfigurationManager" enabled="true" />

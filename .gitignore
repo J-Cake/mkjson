@@ -1,4 +1,6 @@
 build
 node_modules
 *lock*
-src/.core-old
+.perf
+src/plugins/lsdir/build
+src/plugins/lsdir/target
