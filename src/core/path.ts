@@ -10,11 +10,13 @@ import * as plugin from './plugin.js';
  * @param path {string} The path to convert to absolute
  * @param cwd {string} The directory from which relative paths are resolved
  */
-export const toAbs = (path: string, cwd: string = process.cwd()): string => (path.startsWith('/') ? path : (`./${path}`
-    .replace(/^\.\.\//g, cwd + '/../')
-    .replace(/^\.\//g, cwd + '/')
-    .replace(/^~\//g, os.homedir() + '/'))
-    .replace(/^#\//g, config.get().makefilePath[0] + '/'))
+export const toAbs = (path: string, cwd: string = process.cwd() + '/'): string => (path.startsWith('/') ? path : (`./${path}`
+    .replace(/^\.\/~\//g, os.homedir() + '/'))
+    .replace(/^\.\/#\//g, config.get().makefilePath[0]?.match(/^(.*\/)[^\/]*/)?.[1] ?? cwd)
+
+    .replace(/^\.\/\.\.\//g, cwd + '../')
+    .replace(/^\.\//g, cwd))
+
     .replaceAll(/[^\/]*\/\.\./g, '')
     .replaceAll('./', '')
     .replaceAll(/\/+/g, '/');
