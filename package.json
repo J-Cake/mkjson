@@ -31,7 +31,7 @@
         "build:meta": "cat package.json | jq -r '. * .deploy * {deploy:null} | with_entries(select(.value |. != null))' > build/package.json && ln -f DOC.md run.js build && ln -f build/lib/src/lib.d.ts build/index.d.ts",
         "build": "cat package.json | jq -r '.scripts | keys_unsorted[] | select(. | startswith(\"build:\"))' | xargs -d \\\\n -I {} $npm_execpath run {}",
         "clean": "cat .gitignore | xargs -d \\\\n -I {} sh -c 'rm -rf {}'",
-        "test": "find test -name \\*.js | xargs -I {} bash -c 'node {}; echo [{}] exited with code $?'"
+        "test": "find tests -name \\*.js | xargs -I {} bash -c 'node {}; export code=$?; [ $code -eq 0 ] && printf \"\\e[32m[{}] exited with code $code\\e[0m\\n\" || printf \"\\e[31m[{}] exited with code $code\\e[0m\\n\"; [ $code -ne 0 ] && exit 255 || exit $code'"
     },
     "plugins": ["./fs.js", "./http.js", "./json.js", "./js.js", "./glob.js"],
     "dependencies": {
@@ -50,8 +50,8 @@
         "json5": "latest"
     },
     "imports": {
-        "#core": "src/index.ts",
         "lsdir": "src/plugins/lsdir",
+        "#core": "./build/index.js",
         "#cli": "./build/cli.js"
     },
     "types": "build/lib.d.ts",

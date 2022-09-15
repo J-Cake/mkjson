@@ -2,16 +2,21 @@ import os from 'node:os';
 import {iterSync as iter} from '@j-cake/jcake-utils/iter';
 
 import log from "./log.js";
+import {config} from "./config.js";
 import * as plugin from './plugin.js';
 
 /**
  * Tidy up and resolve relative paths into absolute ones
- * @param path
+ * @param path {string} The path to convert to absolute
+ * @param cwd {string} The directory from which relative paths are resolved
  */
-export const toAbs = (path: string): string => (path.startsWith('/') ? path : (`./${path}`
-    .replace(/^\.\.\//g, process.cwd() + '/../')
-    .replace(/^\.\//g, process.cwd() + '/')
-    .replace(/^~\//g, os.homedir() + '/')))
+export const toAbs = (path: string, cwd: string = process.cwd()): string => (path.startsWith('/') ? path : (`./${path}`
+    .replace(/^\.\/~\//g, os.homedir() + '/'))
+    .replace(/^\.\/#\//g, config.get().makefilePath[0]?.match(/^(.*\/)[^\/]*/)?.[1] ?? (cwd + '/'))
+
+    .replace(/^\.\/\.\.\//g, cwd + '/../')
+    .replace(/^\.\//g, cwd + '/'))
+
     .replaceAll(/[^\/]*\/\.\./g, '')
     .replaceAll('./', '')
     .replaceAll(/\/+/g, '/');

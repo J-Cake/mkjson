@@ -1,11 +1,12 @@
 import chalk from "chalk";
+import _ from 'lodash';
 import StateManager from "@j-cake/jcake-utils/state";
 import {Iter} from '@j-cake/jcake-utils/iter';
 
-import {config} from "./config.js";
 import lsGlob, {toAbs} from "./path.js"
 import * as plugins from "./plugin.js";
 import log from "./log.js";
+import {config} from "./config.js";
 
 export const targets: StateManager<TargetList> = new StateManager({});
 
@@ -25,7 +26,7 @@ export declare type Rule = Partial<{
 /**
  * The list of rules which a glob string matches
  */
-export type MatchResult = { rule: Rule, file: string, wildcards: string[] };
+export type MatchResult = { rule: Rule, file: string, wildcards: string[], raw: string, glob: string };
 
 /**
  * Search for a rule matching a target in the received list of rules
@@ -33,8 +34,19 @@ export type MatchResult = { rule: Rule, file: string, wildcards: string[] };
  */
 export async function getRule(artifactHint: string): Promise<MatchResult[]> {
     const artifact = toAbs(artifactHint);
+    const artifactGlob = plugins.API.createGlob(artifact);
+    const out: MatchResult[] = Object.entries(targets.get())
+        .map(([a, i]) => [i.phony ? a : toAbs(a), i] as [string, Rule])
+        .map(([a, i]) => ({
+            ...artifactGlob.exec(a),
+            rule: i
+        }))
+        .filter(i => i.file.length > 0);
+
     for (const [target, rule] of Object.entries(targets.get())) {
-        const matchers = target.split(';').map(target => plugins.API.createGlob(toAbs(target)));
+        const matchers = target.split(';')
+            .map(i => toAbs(i))
+            .map(target => plugins.API.createGlob(target));
 
         const matchesTarget = matchers
             .map(i => i.exec(artifact))
@@ -49,13 +61,18 @@ export async function getRule(artifactHint: string): Promise<MatchResult[]> {
             .flat()
             .collect();
 
-        log.debug(`Matched values`, matchesArtifact);
+        log.debug(`Matched values`, matchesTarget, matchesArtifact);
 
-        const allTargets = [...matchesTarget, ...matchesArtifact];
-
-        if (allTargets.length > 0)
-            return allTargets.map(i => ({ ...i, rule }));
+        out.push(...[...matchesTarget, ...matchesArtifact].map(i => ({...i, rule})));
     }
 
-    return [];
+    return _.uniqWith(out, (i, j) => _.isEqual({
+        file: i.file,
+        wildcards: i.wildcards,
+        rule: i.rule
+    }, {
+        file: j.file,
+        wildcards: j.wildcards,
+        rule: j.rule
+    }));
 }

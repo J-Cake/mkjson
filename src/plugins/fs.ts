@@ -2,8 +2,7 @@ import {promises as fs} from 'node:fs';
 import {Iter} from '@j-cake/jcake-utils/iter';
 
 import ls_dir from "lsdir";
-import {Plugin} from '#core';
-import {toAbs} from "../core/path.js";
+import {Plugin, Path} from '#core';
 
 export async function fetch(path: string, encoding: Plugin.API.Encoding): Promise<string>;
 export async function fetch(path: string): Promise<Buffer>;
@@ -31,7 +30,7 @@ Plugin.registerScheme('file:', handlers = {
         .then(stat => stat.size),
 
     async* lsDir(dir: string): AsyncGenerator<string> {
-        for (const i of ls_dir(toAbs(dir)))
+        for (const i of ls_dir(Path.toAbs(dir)))
             yield i;
     },
 });

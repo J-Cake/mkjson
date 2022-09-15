@@ -12,8 +12,7 @@ Options:
     --makefile, -m ${chalk.yellow('<path>')}   Path to the makefile to use
     --log-level ${chalk.yellow('<level>')}     Set the log level (err, info, verbose, debug)
     --force, -B             Update dependencies even if they haven't changed
-    --synchronous           Run commands synchronously
-    --no-scripts            Don't run scripts
+    --load-plugin           Loads a plugin
     --version, -v           Print the version
     --help                  Print this message
 
@@ -37,10 +36,8 @@ export default async function main(argv: string[], pkg: typeof import('../packag
             mkjson.config.setState({logLevel: logLevel(next())});
         else if (i == '--force' || i == '-B' || i == '-f')
             mkjson.config.setState({force: true});
-        else if (i == '--synchronous' || i == '-S')
-            mkjson.config.setState({synchronous: true});
-        else if (i == '--no-scripts')
-            mkjson.config.setState({blockScripts: true});
+        else if (i == '--load-plugin')
+            await mkjson.Plugin.loadPlugin(mkjson.Path.toAbs(next()));
         else if (i == '--version' || i == '-v')
             return void mkjson.log.info(`Version: ${chalk.whiteBright(pkg.version)}`);
         else if (i == '--help')

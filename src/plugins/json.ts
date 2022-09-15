@@ -1,8 +1,7 @@
 import {promises as fs} from 'node:fs';
 import chalk from "chalk";
-import {iter} from '@j-cake/jcake-utils/iter';
 
-import {log, TargetList, Plugin} from "#core";
+import {log, Plugin, TargetList, Path} from "#core";
 import * as shell from '../shell.js';
 
 export type JSONRule = Partial<{
@@ -120,16 +119,28 @@ export function isMakefile(obj: any): obj is JSONMakefile {
  * @param makefile
  */
 export async function buildMakefile(makefile: JSONMakefile): Promise<TargetList> {
-    const env = {};
+    const Env = {};
 
     if (makefile.env)
         for (const [a, i] of Object.entries(makefile.env))
-            env[a] = await shell.pipe(i, env);
+            await shell
+                .pipe(i, Env)
+                .collect()
+                .then(res => Env[a] = res);
 
     const targets: TargetList = {};
 
     if (makefile.targets)
-        for (const [a, i] of Object.entries(makefile.targets))
+        for (const [a, i] of Object.entries(makefile.targets)) {
+            const env = {};
+
+            if (i.env)
+                for (const [a, j] of Object.entries(i.env))
+                    await shell
+                        .pipe(j, env)
+                        .collect()
+                        .then(res => env[a] = res);
+
             targets[a] = {
                 dependencies: i.dependencies ?? [],
                 orderOnly: i.orderOnly ?? [],
@@ -141,10 +152,11 @@ export async function buildMakefile(makefile: JSONMakefile): Promise<TargetList>
                 cwd: i.cwd ?? process.cwd(),
                 env: {
                     ...process.env,
+                    ...Env,
                     ...env,
-                    ...i.env ?? {}
                 },
             };
+        }
 
     return targets;
 }
@@ -153,20 +165,25 @@ export async function buildMakefile(makefile: JSONMakefile): Promise<TargetList>
  * Load a JSON makefile
  * @param hint Can be any file ending in `.json` or `.json5`
  */
-export async function loadMakefile(hint: string): Promise<TargetList> {
-    if (!['json', 'json5'].some(i => hint.toLowerCase().endsWith(i)))
+export async function loadMakefile(hint: string): Promise<{ targets: TargetList, path: string, hint: string }> {
+    const abs = Path.toAbs(hint);
+    if (!['json', 'json5'].some(i => abs.toLowerCase().endsWith(i)))
         throw `${chalk.blue('.json')} or similar extensions are required`;
 
-    if (!await fs.stat(hint).then(stat => stat.isFile() || stat.isSymbolicLink()).catch(() => false))
+    if (!await fs.stat(abs).then(stat => stat.isFile() || stat.isSymbolicLink()).catch(() => false))
         throw `Expected real file`;
 
     const {default: json} = await import('json5').catch(err => ({default: JSON}));
 
-    const buffer = await Plugin.API.fetch(hint, 'utf8');
+    const buffer = await Plugin.API.fetch(abs, 'utf8');
     const makefile = json.parse(buffer);
 
     if (isMakefile(makefile))
-        return await buildMakefile(makefile);
+        return {
+            path: abs,
+            targets: await buildMakefile(makefile),
+            hint
+        };
 
     else throw `Unexpected makefile schema`;
 }

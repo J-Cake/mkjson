@@ -1,16 +1,20 @@
 import {promises as fs} from 'node:fs';
+import chalk from "chalk";
 import StateManager from "@j-cake/jcake-utils/state";
 
 import {TargetList} from "./targetList.js";
 import log from "./log.js";
-import chalk from "chalk";
+import * as API from './plugin-api.js';
+import * as Path from './path.js';
+
+export type {TargetList} from './targetList.js';
 
 export type Plugin = Partial<{
     /**
      * Finds and loads a makefile from a (usually provided by CLI) hint used to locate it.
      * @param hint Where the makefile is to be loaded from
      */
-    loadMakefile(hint: string): Promise<Nullable<TargetList>>,
+    loadMakefile(hint: string): Promise<Nullable<{ targets: TargetList, path: string, hint: string }>>,
     /**
      * Creates a function which returns whether a string matches a globbing pattern
      * @param glob The glob string understood by the returned function
@@ -27,9 +31,7 @@ export let glob: Plugin['createGlob'];
  * @param source
  */
 export async function loadPlugin(source: string): Promise<Plugin> {
-    const fileDir = `${import.meta.url.match(/^file:\/\/(\/.*)\/[^\/]*$/)?.[1]}/${source}`
-        .replaceAll('/./', '/')
-        .replaceAll(/\/[^\/]*\/\.\./g, '/');
+    const fileDir = Path.toAbs(source, import.meta.url.match(/^file:\/\/(\/.*\/)[^\/]*$/)?.[1]);
 
     if (!await fs.stat(fileDir).then(res => res.isFile() || res.isSymbolicLink()).catch(() => false))
         throw log.err(`Invalid plugin format: Plugins must be real files`);
@@ -49,19 +51,42 @@ export async function loadPlugin(source: string): Promise<Plugin> {
 
 export interface Glob {
     matches(str: string): boolean,
-    exec(str: string): { file: string, wildcards: string[], raw: string }
+    exec(str: string): { file: string, wildcards: string[], raw: string, glob: string }
 }
 
 export interface SchemeHandler {
+    /**
+     * Get the time (in milliseconds) a file or resource was last modified.
+     * @param file
+     */
     getMTime(file: string): Promise<Date | number>,
 
+    /**
+     * Get the size of the file or resource in bytes
+     * @param file
+     */
     getSize(file: string): Promise<number>,
 
+    /**
+     * An iterator which lists all files in the specified directory recursively.
+     * * The expected format is an absolute path from the volume root.
+     * @param dir
+     */
     lsDir(dir: string): AsyncIterable<string>,
 
+    /**
+     * Fetch the contents of a file in raw binary format
+     * @param path
+     */
     fetch(path: string): Promise<Buffer>,
-    fetch(path: string, encoding: 'utf8' | 'utf-8' | 'base64' | 'hex'): Promise<string>
-    fetch(path: string, encoding?: 'utf8' | 'utf-8' | 'base64' | 'hex'): Promise<Buffer | string>
+
+    /**
+     * Fetch the contents of a file using a given encoding format
+     * @param path
+     * @param encoding
+     */
+    fetch(path: string, encoding: API.Encoding): Promise<string>
+    fetch(path: string, encoding?: API.Encoding): Promise<Buffer | string>
 }
 
 /**
