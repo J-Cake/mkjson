@@ -1,0 +1,15 @@
+[package]
+name = "lsdir"
+version = "0.1.0"
+description = "LSDir"
+license = "MIT"
+edition = "2021"
+exclude = ["index.node"]
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies.neon]
+version = "0.10.1"
+default-features = false
+features = ["napi-6"]
