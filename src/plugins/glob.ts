@@ -10,6 +10,7 @@ export function createGlob(glob: string): Plugin.Glob {
 
     return {
         exec(raw: string) {
+            regExp.lastIndex = -1;
             const [file, ...wildcards] = regExp.exec(raw) ?? ['', ''];
             return {file, wildcards, raw, glob};
         },
