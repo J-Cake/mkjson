@@ -21,9 +21,6 @@
         "baseUrl": "./src",
         "paths": {
             "#core": ["core/index.ts"],
-            "node:vm": ["lib/vm.d.ts", "node_modules/@types/node/vm.d.ts"],
-            "../build/index.js": ["core/index.ts"],
-            "*": ["node_modules/*"],
         }
     },
     "exclude": ["build", "node_modules"],

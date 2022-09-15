@@ -20,6 +20,7 @@ jobs:
       - run: npm config set registry https://npm.pkg.github.com && npm set //npm.pkg.github.com/:_authToken ${{ secrets.GH_PKG }}
       - run: npm config set registry https://registry.npmjs.com && npm set //registry.npmjs.com/:_authToken ${{ secrets.NPM_PKG }}
       - run: npm install
+      - run: npx tsc -p tsconfig.json
       - run: npm run build
       - run: npm publish --access public --registry https://registry.npmjs.com
         working-directory: ./build
