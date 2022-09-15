@@ -20,14 +20,14 @@ export async function loadMakefile(hint: string): Promise<void> {
 
         log.debug(`Attempting loader: ${chalk.yellow(a)}`);
         const makefile = await i.loadMakefile(hint)
-            .catch(err => (log.debug(err), null));
+            .catch(err => void log.debug(err));
 
-        if (makefile) {
-            config.setState(prev => ({makefilePath: [...prev.makefilePath, hint]}));
+        if (makefile?.targets) {
+            config.setState(prev => ({makefilePath: [...prev.makefilePath, makefile.path]}));
 
             return void targets.setState(prev => ({
                 ...prev,
-                ...makefile
+                ...makefile.targets
             }));
         } else
             log.debug(`Loader returned nothing`);
