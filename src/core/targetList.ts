@@ -43,11 +43,6 @@ export async function getRule(artifactHint: string): Promise<MatchResult[]> {
         }))
         .filter(i => i.file.length > 0);
 
-    // TODO: Handle artifact containing wildcards
-
-    // if (out.length > 0 && !config.get().force)
-    //     return out;
-
     for (const [target, rule] of Object.entries(targets.get())) {
         const matchers = target.split(';')
             .map(i => toAbs(i))
