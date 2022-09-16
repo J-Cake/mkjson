@@ -6,20 +6,32 @@ import {config} from "./config.js";
 import * as plugin from './plugin.js';
 
 /**
+ * remove all
+ * @param path
+ */
+export function traverse(path: string): string {
+    let str = `/${path}`;
+    const regex = /(^|\/[^\/]*)\/\.\.(?=\/|$)/;
+
+    while (str.indexOf('..') > -1)
+        str = str.replace(regex, '');
+
+    return str
+        .replaceAll(/\.\//g, '')
+        .replaceAll(/\/+/g, '/');
+}
+
+/**
  * Tidy up and resolve relative paths into absolute ones
  * @param path {string} The path to convert to absolute
  * @param cwd {string} The directory from which relative paths are resolved
  */
-export const toAbs = (path: string, cwd: string = process.cwd()): string => (path.startsWith('/') ? path : (`./${path}`
+export const toAbs = (path: string, cwd: string = process.cwd()): string => traverse((path.startsWith('/') ? path : (`./${path}`
     .replace(/^\.\/~\//g, os.homedir() + '/'))
     .replace(/^\.\/#\//g, config.get().makefilePath[0]?.match(/^(.*\/)[^\/]*/)?.[1] ?? (cwd + '/'))
 
     .replace(/^\.\/\.\.\//g, cwd + '/../')
-    .replace(/^\.\//g, cwd + '/'))
-
-    .replaceAll(/[^\/]*\/\.\./g, '')
-    .replaceAll('./', '')
-    .replaceAll(/\/+/g, '/');
+    .replace(/^\.\//g, cwd + '/')));
 
 /**
  * List all files which match a particular glob pattern.

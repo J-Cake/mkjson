@@ -19,3 +19,4 @@ assert.equal(toAbs('/'), '/')
 assert.equal(toAbs('/../'), '/');
 assert.equal(toAbs('/./'), '/');
 assert.equal(toAbs('//'), '/');
+assert.equal(toAbs('/code/file/folder/dir/../../directory'), '/code/file/directory');
