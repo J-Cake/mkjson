@@ -3,22 +3,27 @@ use std::path::PathBuf;
 
 use neon::prelude::*;
 
-pub fn list_directory(dir: String) -> Result<Vec<String>, ()> {
+pub fn list_directory(dir: String) -> Result<Vec<String>, String> {
     let mut dir_contents = vec![];
 
     let mut read = vec![PathBuf::from(dir)];
     let mut index = 0usize;
     while index < read.len() {
-        for i in read_dir(read[index].to_owned()).unwrap() {
-            let path = i.unwrap().path();
+        match read_dir(read[index].to_owned()) {
+            Ok(dir) => {
+                for i in dir {
+                    let path = i.unwrap().path();
 
-            dir_contents.push(path.display().to_string());
+                    dir_contents.push(path.display().to_string());
 
-            if path.is_dir() {
-                read.push(path)
+                    if path.is_dir() {
+                        read.push(path)
+                    }
+                }
+                index += 1;
             }
+            Err(err) => return Err(err.to_string())
         }
-        index += 1;
     }
 
     Ok(dir_contents)
@@ -26,7 +31,14 @@ pub fn list_directory(dir: String) -> Result<Vec<String>, ()> {
 
 fn ls_dir(mut cx: FunctionContext) -> JsResult<JsArray> {
     let path = cx.argument::<JsString>(0)?;
-    let dir = list_directory(path.value(&mut cx)).unwrap();
+    let dir = match list_directory(path.value(&mut cx)) {
+        Ok(dir) => dir,
+        Err(err) => {
+            let msg = cx.string(err);
+            return cx.throw(msg);
+        }
+    };
+
     let obj = cx.empty_array();
 
     for (a, i) in dir.iter().enumerate() {
