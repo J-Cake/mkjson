@@ -32,9 +32,9 @@ export default async function run(...rules: MatchResult[]): Promise<boolean> {
                     if (!dependencies.some(j => i.file == j.file))
                         dependencies.push(i);
 
-                const fileMtime = await plugin.API.getMTime(file).catch(_ => 0);
+                const fileMtime = await plugin.API.getMTime(file, rule).catch(_ => 0);
                 let hasModifiedDependency = await Iter(dependencies)
-                    .map(async i => await plugin.API.getMTime(i.file).catch(_ => Infinity))
+                    .map(async i => await plugin.API.getMTime(i.file, rule).catch(_ => Infinity))
                     .await()
                     .filter(i => i > fileMtime)
                     .collect();

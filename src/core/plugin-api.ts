@@ -2,7 +2,7 @@ import chalk from "chalk";
 
 import log from "./log.js";
 import {config} from "./config.js";
-import {targets} from "./targetList.js";
+import {Rule, targets} from "./targetList.js";
 import * as plugins from "./plugin.js";
 
 /**
@@ -39,31 +39,33 @@ export async function loadMakefile(hint: string): Promise<void> {
 /**
  * Gets the time a file (or other resource) was last modified.
  * @param path {string}
+ * @param target {Rule} The rule the target was called from.
  * @returns {number} a UNIX timestamp (including milliseconds)
  */
-export function getMTime(path: string): Promise<Date | number> {
+export function getMTime(path: string, target?: Rule): Promise<Date | number> {
     const schemeName = path.match(/^[a-zA-Z][a-zA-Z0-9]*:(?=.*)/)?.[0] ?? 'file:';
     const scheme = plugins.schemes.get(schemeName);
 
     if (!scheme?.getMTime)
         throw `No scheme defined for ${schemeName}`;
 
-    return scheme.getMTime(path);
+    return scheme.getMTime(path, target);
 }
 
 /**
  * Get the size of a file or resource
  * @param path {string}
+ * @param target {Rule} The rule the target was called from.
  * @returns {number} The size of the resource in bytes
  */
-export function getSize(path: string): Promise<number> {
+export function getSize(path: string, target?: Rule): Promise<number> {
     const schemeName = path.match(/^[a-zA-Z][a-zA-Z0-9]*:(?=.*)/)?.[0] ?? 'file:';
     const scheme = plugins.schemes.get(schemeName);
 
     if (!scheme?.getSize)
         throw `No scheme defined for ${schemeName}`;
 
-    return scheme.getSize(path);
+    return scheme.getSize(path, target);
 }
 
 /**
@@ -86,7 +88,7 @@ export type Encoding = 'utf8' | 'utf-8' | 'base64' | 'hex';
 /**
  * Fetch the contents of a file or resource
  * @param path {string}
- * @returns {Buffer | string}
+ * @returns {NodeJS.TypedArray | string}
  */
 export function fetch(path: string): Promise<Buffer>;
 export function fetch(path: string, encoding: Encoding): Promise<string>;

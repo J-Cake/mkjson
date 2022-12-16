@@ -2,7 +2,7 @@
     "name": "@j-cake/mkjson",
     "description": "The make-like build tool that lives in your package.json.",
     "type": "module",
-    "version": "v1.4.0",
+    "version": "v1.4.1",
     "bin": "build/run.js",
     "main": "build/lib.js",
     "keywords": [
@@ -33,16 +33,23 @@
         "clean": "cat .gitignore | xargs -d \\\\n -I {} sh -c 'rm -rf {}'",
         "test": "find tests -name \\*.js | sort | xargs -I {} bash -c 'node {}; export code=$?; [ $code -eq 0 ] && printf \"\\e[32m[{}] exited with code $code\\e[0m\\n\" || printf \"\\e[31m[{}] exited with code $code\\e[0m\\n\"; [ $code -ne 0 ] && exit 255 || exit $code'"
     },
-    "plugins": ["./fs.js", "./http.js", "./json.js", "./js.js", "./glob.js"],
+    "plugins": [
+        "./fs.js",
+        "./http.js",
+        "./json.js",
+        "./js.js",
+        "./glob.js"
+    ],
     "dependencies": {
         "@j-cake/jcake-utils": "latest",
-        "lsdir": "link:src/plugins/lsdir/build",
+        "@j-cake/mkjson": "latest",
+        "chalk": "latest",
         "lodash": "latest",
-        "chalk": "latest"
+        "lsdir": "link:src/plugins/lsdir/build"
     },
     "devDependencies": {
-        "@types/node": "latest",
         "@types/lodash": "latest",
+        "@types/node": "latest",
         "esbuild": "latest",
         "typescript": "latest"
     },
@@ -55,17 +62,15 @@
         "#cli": "./build/cli.js"
     },
     "types": "build/lib.d.ts",
-
     "deploy": {
         "targets": null,
-        "deploy":  null,
+        "deploy": null,
         "scripts": null,
         "devDependencies": null,
         "optionalDependencie": null,
         "main": "./lib.js",
         "bin": "./run.js",
         "types": "./index.d.ts",
-
         "imports": {
             "#core": "./index.js",
             "#cli": "./cli.js"
