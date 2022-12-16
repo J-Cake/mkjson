@@ -2,7 +2,7 @@ import {promises as fs} from 'node:fs';
 import chalk from "chalk";
 import StateManager from "@j-cake/jcake-utils/state";
 
-import {TargetList} from "./targetList.js";
+import {Rule, TargetList} from "./targetList.js";
 import log from "./log.js";
 import * as API from './plugin-api.js';
 import * as Path from './path.js';
@@ -58,14 +58,16 @@ export interface SchemeHandler {
     /**
      * Get the time (in milliseconds) a file or resource was last modified.
      * @param file
+     * @param target The target the rule was called from.
      */
-    getMTime(file: string): Promise<Date | number>,
+    getMTime(file: string, target?: Rule): Promise<Date | number>,
 
     /**
      * Get the size of the file or resource in bytes
      * @param file
+     * @param target The target the rule was called from.
      */
-    getSize(file: string): Promise<number>,
+    getSize(file: string, target?: Rule): Promise<number>,
 
     /**
      * An iterator which lists all files in the specified directory recursively.

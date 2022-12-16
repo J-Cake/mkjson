@@ -18,12 +18,27 @@ export async function fetch(path: string, encoding?: Plugin.API.Encoding): Promi
         return Buffer.concat(buf);
 }
 
+export async function getMTime(dir: string): Promise<Date> {
+    const dirs = await fs.readdir(dir);
+
+    let newest = 0;
+    for (const i of dirs.map(i => Path.toAbs(i, dir))) {
+        const stat = await fs.stat(i);
+        if (stat.isDirectory())
+            newest = Math.max(newest, await getMTime(i).then(mtime => mtime.getTime()));
+        else
+            newest = Math.max(newest, stat.mtime.getTime());
+    }
+
+    return new Date(newest);
+}
+
 let handlers: Plugin.SchemeHandler;// = {} as any;
 Plugin.registerScheme('file:', handlers = {
     fetch,
     getMTime: (file: string) => fs
         .stat(file)
-        .then(stat => stat.mtime),
+        .then(stat => stat.isDirectory() ? getMTime(file) : stat.mtime),
 
     getSize: (file: string) => fs
         .stat(file)

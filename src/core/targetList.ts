@@ -6,7 +6,6 @@ import {Iter} from '@j-cake/jcake-utils/iter';
 import lsGlob, {toAbs} from "./path.js"
 import * as plugins from "./plugin.js";
 import log from "./log.js";
-import {config} from "./config.js";
 
 export const targets: StateManager<TargetList> = new StateManager({});
 
@@ -42,6 +41,9 @@ export async function getRule(artifactHint: string): Promise<MatchResult[]> {
             rule: i
         }))
         .filter(i => i.file.length > 0);
+
+    // if (out.length > 0)
+    //     return out;
 
     for (const [target, rule] of Object.entries(targets.get())) {
         const matchers = target.split(';')
