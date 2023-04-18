@@ -1,0 +1,15 @@
+{
+    "build:core": "esbuild src/core/index.ts --outdir=build --bundle --sourcemap --splitting --platform=node --format=esm --external:#core",
+    "build:cli": "esbuild src/cli.ts --outdir=build --bundle --sourcemap --splitting --platform=node --format=esm --external:#core",
+    "build:lib": "esbuild src/lib.ts --outdir=build --bundle --sourcemap --splitting --platform=node --format=esm --external:#core",
+    "build:plugin/json": "esbuild src/plugins/json.ts --outdir=build --bundle --sourcemap --splitting --platform=node --format=esm --external:#core",
+    "build:plugin/js": "esbuild src/plugins/js.ts --outdir=build --bundle --sourcemap --splitting --platform=node --format=esm --external:#core",
+    "build:plugin/glob": "esbuild src/plugins/glob.ts --outdir=build --bundle --sourcemap --splitting --platform=node --format=esm --external:#core",
+    "build:plugin/fs": "esbuild src/plugins/fs.ts --outdir=build --bundle --sourcemap --splitting --platform=node --format=esm --external:#core",
+    "build:plugin/fs_lsdir": "ln -f src/plugins/lsdir/build/index.node build/lsdir.node",
+    "build:plugin/http": "esbuild src/plugins/http.ts --outdir=build --bundle --sourcemap --splitting --platform=node --format=esm --external:#core",
+    "build:meta": "cat package.json | jq -r '. * .deploy * {deploy:null} | with_entries(select(.value |. != null))' > build/package.json && ln -f DOC.md bin/run.js build && ln -f build/lib/src/lib.d.ts build/index.d.ts",
+    "build": "for i in $(cat package.json | jq -r '.scripts | keys_unsorted[] | select(. | startswith(\"build:\"))'); do $npm_execpath run $i; done",
+    "clean": "for i in $(cat .gitignore); do sh -c 'rm -rf {}'; done",
+    "test": "find tests -name \\*.js | sort | xargs -I {} bash -c 'node {}; export code=$?; [ $code -eq 0 ] && printf \"\\e[32m[{}] exited with code $code\\e[0m\\n\" || printf \"\\e[31m[{}] exited with code $code\\e[0m\\n\"; [ $code -ne 0 ] && exit 255 || exit $code'"
+}

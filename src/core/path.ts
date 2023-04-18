@@ -6,6 +6,13 @@ import {config} from "./config.js";
 import * as plugin from './plugin.js';
 
 /**
+ * Convert a canonical Windows path to the UNIX equivalent.
+ * @param path
+ * @returns the given drive letter is considered a root-level primitive.
+ */
+export const unixify = (path: string): string => path.replace(/(^[a-z]):/i, '/$1').replaceAll('\\', '/');
+
+/**
  * remove all
  * @param path
  */
@@ -26,7 +33,7 @@ export function traverse(path: string): string {
  * @param path {string} The path to convert to absolute
  * @param cwd {string} The directory from which relative paths are resolved
  */
-export const toAbs = (path: string, cwd: string = process.cwd()): string => traverse((path.startsWith('/') ? path : (`./${path}`
+export const toAbs = (path: string, cwd: string = process.cwd()): string => traverse((unixify(path).startsWith('/') ? path : (`./${path}`
     .replace(/^\.\/~\//g, os.homedir() + '/'))
     .replace(/^\.\/#\//g, config.get().makefilePath[0]?.match(/^(.*\/)[^\/]*/)?.[1] ?? (cwd + '/'))
 

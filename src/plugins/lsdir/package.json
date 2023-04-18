@@ -3,11 +3,11 @@
     "main": "build/index.js",
     "typings": "index.d.ts",
     "scripts": {
-        "build:lsdir": "cargo-cp-artifact -nc build/index.node -- cargo build --message-format=json-render-diagnostics",
-        "build:meta": "cat package.json | jq -r '. * .deploy * {deploy:null} | with_entries(select(.value |. != null))' > build/package.json",
-        "build:lib": "mkdir -p build && ln -f index.d.ts index.js build",
-        "build": "cat package.json | jq -r '.scripts | keys_unsorted[] | select(. | startswith(\"build:\"))' | xargs -d \\\\n -I {} $npm_execpath run {}",
-        "clean": "rm -rf node_modules target build *lock* *pnpm*"
+        "build:lsdir": "node ../../../bin/build.js build:lsdir --win32 bin/build_lsdir_win32.json --posix bin/build_lsdir_posix.json",
+        "build:meta": "node ../../../bin/build.js build:meta --win32 bin/build_lsdir_win32.json --posix bin/build_lsdir_posix.json",
+        "build:lib":  "node ../../../bin/build.js build:lib --win32 bin/build_lsdir_win32.json --posix bin/build_lsdir_posix.json",
+        "build": "node ../../../bin/build.js build --win32 bin/build_lsdir_win32.json --posix bin/build_lsdir_posix.json",
+        "clean":  "node ../../../bin/build. clean --win32 bin/build_lsdir_win32.json --posix bin/build_lsdir_posix.json"
     },
     "dependencies": {
         "cargo-cp-artifact": "latest"
