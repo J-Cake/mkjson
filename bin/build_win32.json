@@ -6,10 +6,19 @@
     "build:plugin/js": "esbuild src\\plugins\\js.ts --outdir=build --bundle --sourcemap --splitting --platform=node --format=esm --external:#core",
     "build:plugin/glob": "esbuild src\\plugins\\glob.ts --outdir=build --bundle --sourcemap --splitting --platform=node --format=esm --external:#core",
     "build:plugin/fs": "esbuild src\\plugins\\fs.ts --outdir=build --bundle --sourcemap --splitting --platform=node --format=esm --external:#core",
-    "build:plugin/fs_lsdir": ["cmd.exe", "/c", "if not exist build\\lsdir.node (mklink build\\lsdir.node src\\plugins\\lsdir\\build\\index.node) && true"],
+    "build:plugin/fs_lsdir": ["cmd.exe", "/c", "if not exist build\\lsdir.node (mklink %cd%\\build\\lsdir.node %cd%\\src\\plugins\\lsdir\\build\\index.node) && true"],
     "build:plugin/http": "esbuild src\\plugins\\http.ts --outdir=build --bundle --sourcemap --splitting --platform=node --format=esm --external:#core",
-    "build:meta": ["jq", "-r", ". * .deploy * {deploy:null} | with_entries(select(.value |. != null))", "package.json", { "op": "pipe" }, "node", "bin\\dump.js", "build\\package.json", "--force", { "op": "after" }, "cmd.exe", "/c", "(if not exist build\\DOC.md (mklink build\\DOC.md DOC.md)) && echo DOC.md", { "op": "after" }, "cmd.exe", "/c", "(if not exist build\\run.js (mklink build\\run.js bin\\run.js)) && echo run.js", { "op": "after" }, "cmd.exe", "/c", "(if not exist build\\index.d.ts (mklink build\\index.d.ts build\\lib\\src\\lib.d.ts)) && echo index.d.ts"],
-    "build": ["jq", "-r", ".scripts | keys_unsorted[] | select(. | startswith(\"build:\"))", "package.json", { "op": "for", "value": "i" }, "node", "$npm_execpath", "run", "$i"],
+    "build:meta": [
+        "jq", "-r", ". * .deploy * {deploy:null} | with_entries(select(.value |. != null))", "package.json", { "op": "pipe" },
+        "node", "bin\\dump.js", "build\\package.json", "--force", { "op": "after" },
+        "cmd.exe", "/c", "(if not exist build\\DOC.md (mklink %cd%\\build\\DOC.md %cd%\\DOC.md)) && true", { "op": "after" },
+        "cmd.exe", "/c", "(if not exist build\\run.js (mklink %cd%\\build\\run.js %cd%\\run.js)) && true", { "op": "after" },
+        "cmd.exe", "/c", "(if not exist build\\index.d.ts (mklink %cd%\\build\\index.d.ts %cd%\\build\\lib\\src\\lib.d.ts)) && true"
+    ],
+    "build": [
+        "jq", "-r", ".scripts | keys_unsorted[] | select(. | startswith(\"build:\"))", "package.json", { "op": "for", "value": "i" },
+        "node", "$npm_execpath", "run", "$i"
+    ],
     "clean": "echo Not Implemented",
     "test": "echo Not Implemented"
 }

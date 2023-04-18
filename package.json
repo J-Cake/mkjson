@@ -2,8 +2,8 @@
     "name": "@j-cake/mkjson",
     "description": "The make-like build tool that lives in your package.json.",
     "type": "module",
-    "version": "v1.4.1",
-    "bin": "build/run.js",
+    "version": "v1.4.2",
+    "bin": "run.js",
     "main": "build/lib.js",
     "keywords": [
         "json",
@@ -34,11 +34,11 @@
         "test": "node bin/build.js test"
     },
     "plugins": [
-        "./fs.js",
-        "./http.js",
-        "./json.js",
-        "./js.js",
-        "./glob.js"
+        "fs.js",
+        "http.js",
+        "json.js",
+        "js.js",
+        "glob.js"
     ],
     "dependencies": {
         "@j-cake/jcake-utils": "latest",

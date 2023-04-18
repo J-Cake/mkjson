@@ -13,6 +13,12 @@ import * as plugin from './plugin.js';
 export const unixify = (path: string): string => path.replace(/(^[a-z]):/i, '/$1').replaceAll('\\', '/');
 
 /**
+ * Convert a unix path back to Windows only if actually on Windows
+ * @param path
+ */
+export const deunixify = (path: string): string => ["cygwin", "win32"].includes(os.platform()) ? path.slice(1).replaceAll('/', '\\') : path;
+
+/**
  * remove all
  * @param path
  */
@@ -33,12 +39,12 @@ export function traverse(path: string): string {
  * @param path {string} The path to convert to absolute
  * @param cwd {string} The directory from which relative paths are resolved
  */
-export const toAbs = (path: string, cwd: string = process.cwd()): string => traverse((unixify(path).startsWith('/') ? path : (`./${path}`
+export const toAbs = (path: string, cwd: string = process.cwd()): string => deunixify(traverse((unixify(path).startsWith('/') ? path : (`./${path}`
     .replace(/^\.\/~\//g, os.homedir() + '/'))
     .replace(/^\.\/#\//g, config.get().makefilePath[0]?.match(/^(.*\/)[^\/]*/)?.[1] ?? (cwd + '/'))
 
     .replace(/^\.\/\.\.\//g, cwd + '/../')
-    .replace(/^\.\//g, cwd + '/')));
+    .replace(/^\.\//g, cwd + '/'))));
 
 /**
  * List all files which match a particular glob pattern.

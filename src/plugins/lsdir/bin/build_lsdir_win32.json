@@ -3,8 +3,8 @@
     "build:meta": ["jq", "-r", ". * .deploy * {deploy:null} | with_entries(select(.value |. != null))", "package.json", { "op": "pipe" }, "node", "../../../bin/dump.js", "build/package.json", "--force"],
     "build:lib": [
         "cmd", "/c", "if not exist build (mkdir build) && true", { "op": "after" },
-        "cmd", "/c", "if not exist build\\index.d.ts (mklink build\\index.d.ts index.d.ts)", {"op": "with"},
-        "cmd", "/c", "if not exist build\\index.js (mklink build\\index.js index.js)"
+        "cmd", "/c", "if not exist build\\index.d.ts (mklink %cd%\\build\\index.d.ts %cd%\\index.d.ts)", {"op": "with"},
+        "cmd", "/c", "if not exist build\\index.js (mklink %cd%\\build\\index.js %cd%\\index.js)"
     ],
     "build": [
         "jq", "-r", ".scripts | keys_unsorted[] | select(. | startswith(\"build:\"))", "package.json", {"op": "for", "value": "i"},

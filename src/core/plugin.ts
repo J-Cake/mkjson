@@ -6,6 +6,7 @@ import {Rule, TargetList} from "./targetList.js";
 import log from "./log.js";
 import * as API from './plugin-api.js';
 import * as Path from './path.js';
+import os from "node:os";
 
 export type {TargetList} from './targetList.js';
 
@@ -31,14 +32,16 @@ export let glob: Plugin['createGlob'];
  * @param source
  */
 export async function loadPlugin(source: string): Promise<Plugin> {
-    const fileDir = Path.toAbs(source, import.meta.url.match(/^file:\/\/(\/.*\/)[^\/]*$/)?.[1]);
+    const fileDir = Path.toAbs(source, ["cygwin", "win32"].includes(os.platform()) ?
+        import.meta.url.match(/^file:\/\/\/([a-z]:\/.*\/)[^\/]*$/i)?.[1] :
+        import.meta.url.match(/^file:\/\/(\/.*\/)[^\/]*$/)?.[1]);
 
     if (!await fs.stat(fileDir).then(res => res.isFile() || res.isSymbolicLink()).catch(() => false))
         throw log.err(`Invalid plugin format: Plugins must be real files`);
 
     log.verbose(`Loading plugin: ${chalk.yellow(fileDir)}`);
 
-    const plugin = await import(fileDir);
+    const plugin = await import(["cygwin", "win32"].includes(os.platform()) ? `file:///${fileDir.replaceAll('\\', '/')}` : fileDir);
 
     const createGlob = plugins.setState({[fileDir]: plugin})[fileDir].createGlob;
     if (createGlob)
