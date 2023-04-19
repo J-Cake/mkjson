@@ -36,12 +36,15 @@ export async function loadPlugin(source: string): Promise<Plugin> {
         import.meta.url.match(/^file:\/\/\/([a-z]:\/.*\/)[^\/]*$/i)?.[1] :
         import.meta.url.match(/^file:\/\/(\/.*\/)[^\/]*$/)?.[1]);
 
+    log.debug(source, fileDir);
+    // log.debug(await fs.stat(fileDir));
+
     if (!await fs.stat(fileDir).then(res => res.isFile() || res.isSymbolicLink()).catch(() => false))
         throw log.err(`Invalid plugin format: Plugins must be real files`);
 
     log.verbose(`Loading plugin: ${chalk.yellow(fileDir)}`);
 
-    const plugin = await import(["cygwin", "win32"].includes(os.platform()) ? `file:///${fileDir.replaceAll('\\', '/')}` : fileDir);
+    const plugin = await import(["cygwin", "win32"].includes(os.platform()) ? Path.toFileURL(fileDir) : fileDir);
 
     const createGlob = plugins.setState({[fileDir]: plugin})[fileDir].createGlob;
     if (createGlob)

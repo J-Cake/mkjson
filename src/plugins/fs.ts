@@ -7,7 +7,7 @@ import {Path, Plugin, Rule} from '#core';
 export async function fetch(path: string, encoding: Plugin.API.Encoding): Promise<string>;
 export async function fetch(path: string): Promise<Buffer>;
 export async function fetch(path: string, encoding?: Plugin.API.Encoding): Promise<Buffer | string> {
-    const file = await fs.open(path, 'r');
+    const file = await fs.open(Path.fromFileURL(path), 'r');
 
     const buf = await Iter(file.createReadStream())
         .collect();

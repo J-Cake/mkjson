@@ -19,6 +19,18 @@ export const unixify = (path: string): string => path.replace(/(^[a-z]):/i, '/$1
 export const deunixify = (path: string): string => ["cygwin", "win32"].includes(os.platform()) ? path.slice(1).replaceAll('/', '\\') : path;
 
 /**
+ * Convert path to file url
+ * @param path
+ */
+export const toFileURL = (path: string) => `file:///${path.replaceAll('\\', '/')}`;
+
+/**
+ * If a path is a file url, convert it back to a standard path
+ * @param path
+ */
+export const fromFileURL = (path: string) => deunixify(path.replace(/^file:\/\//i, ''));
+
+/**
  * remove all
  * @param path
  */

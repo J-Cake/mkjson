@@ -170,12 +170,14 @@ export async function loadMakefile(hint: string): Promise<{ targets: TargetList,
     if (!['json', 'json5'].some(i => abs.toLowerCase().endsWith(i)))
         throw `${chalk.blue('.json')} or similar extensions are required`;
 
+    log.debug(abs);
+
     if (!await fs.stat(abs).then(stat => stat.isFile() || stat.isSymbolicLink()).catch(() => false))
         throw `Expected real file`;
 
     const {default: json} = await import('json5').catch(err => ({default: JSON}));
 
-    const buffer = await Plugin.API.fetch(abs, 'utf8');
+    const buffer = await Plugin.API.fetch(Path.toFileURL(abs), 'utf8');
     const makefile = json.parse(buffer);
 
     if (isMakefile(makefile))

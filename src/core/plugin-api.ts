@@ -96,6 +96,8 @@ export function fetch(path: string, encoding?: Encoding): Promise<Buffer | strin
     const schemeName = path.match(/^[a-zA-Z][a-zA-Z0-9]*:(?=.*)/)?.[0] ?? 'file:';
     const scheme = plugins.schemes.get(schemeName);
 
+    log.debug(`scheme: ${chalk.yellow(schemeName)}`, path);
+
     if (!scheme?.fetch)
         throw `No scheme defined for ${schemeName}`;
 

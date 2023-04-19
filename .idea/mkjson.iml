@@ -11,6 +11,9 @@
       <excludeFolder url="file://$MODULE_DIR$/build" />
       <excludeFolder url="file://$MODULE_DIR$/src/plugins/lsdir/build" />
       <excludeFolder url="file://$MODULE_DIR$/src/plugins/lsdir/target" />
+      <excludeFolder url="file://$MODULE_DIR$/.cargo" />
+      <excludeFolder url="file://$MODULE_DIR$/.github" />
+      <excludeFolder url="file://$MODULE_DIR$/.vscode" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
