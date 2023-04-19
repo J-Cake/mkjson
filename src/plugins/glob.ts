@@ -4,7 +4,7 @@ import {Plugin} from '#core';
 
 export function createGlob(glob: string): Plugin.Glob {
     const regExp = new RegExp('^' + decodeURIComponent(glob
-        .replaceAll(/([.\-\/^$?\[\]{}])/g, '\\$1')
+        .replaceAll(/([.\-\\\/^$?\[\]{}])/g, '\\$1')
         .replaceAll('*', '(.*)')
         .replaceAll('+', '([^\/]*)')) + '$', 'g');
 
